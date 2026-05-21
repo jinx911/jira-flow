@@ -1,3 +1,5 @@
+**English** | [中文](jira-flow-training.zh-CN.md)
+
 # Jira-Flow Training Guide
 
 > Full-lifecycle Agent Team development workflow — from Jira Issue to code commit

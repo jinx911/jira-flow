@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jira-Flow System Architecture</title>
+    <title>Jira-Flow 系统架构图</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -73,9 +73,9 @@
 <body>
 <div class="container" id="report-container">
     <div class="header">
-        <a href="jira-flow-architecture.zh-CN.html" style="float:right;color:#94a3b8;font-size:11px;text-decoration:none;font-family:'JetBrains Mono',monospace">中文</a>
-        <h1><span class="dot"></span>Jira-Flow System Architecture</h1>
-        <p>Hub-and-Spoke Multi-Agent Collaborative Development Workflow</p>
+        <a href="jira-flow-architecture.html" style="float:right;color:#94a3b8;font-size:11px;text-decoration:none;font-family:'JetBrains Mono',monospace">English</a>
+        <h1><span class="dot"></span>Jira-Flow 系统架构图</h1>
+        <p>Hub-and-Spoke 多 Agent 协作开发工作流</p>
     </div>
     <div class="toolbar">
         <button class="toolbar-toggle" onclick="this.nextElementSibling.classList.toggle('active')">&#8942;</button>
@@ -125,12 +125,12 @@
             <line x1="550" y1="655" x2="550" y2="690" stroke="#fbbf24" stroke-width="1" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
 
             <!-- Arrow labels -->
-            <text x="325" y="230" fill="#34d399" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Coordinate</text>
-            <text x="563" y="230" fill="#22d3ee" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Coordinate</text>
-            <text x="775" y="230" fill="#fb7185" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Coordinate</text>
-            <text x="195" y="510" fill="#94a3b8" font-size="7" text-anchor="end" font-family="JetBrains Mono">Call</text>
-            <text x="505" y="510" fill="#94a3b8" font-size="7" text-anchor="start" font-family="JetBrains Mono">Call</text>
-            <text x="870" y="510" fill="#94a3b8" font-size="7" text-anchor="start" font-family="JetBrains Mono">Call</text>
+            <text x="325" y="230" fill="#34d399" font-size="8" text-anchor="middle" font-family="JetBrains Mono">协调</text>
+            <text x="563" y="230" fill="#22d3ee" font-size="8" text-anchor="middle" font-family="JetBrains Mono">协调</text>
+            <text x="775" y="230" fill="#fb7185" font-size="8" text-anchor="middle" font-family="JetBrains Mono">协调</text>
+            <text x="195" y="510" fill="#94a3b8" font-size="7" text-anchor="end" font-family="JetBrains Mono">调用</text>
+            <text x="505" y="510" fill="#94a3b8" font-size="7" text-anchor="start" font-family="JetBrains Mono">调用</text>
+            <text x="870" y="510" fill="#94a3b8" font-size="7" text-anchor="start" font-family="JetBrains Mono">调用</text>
 
             <!-- ===== USER ===== -->
             <rect x="440" y="50" width="220" height="50" rx="6" fill="#0f172a"/>
@@ -142,8 +142,8 @@
             <rect x="395" y="138" width="310" height="65" rx="6" fill="#0f172a"/>
             <rect x="395" y="138" width="310" height="65" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
             <circle cx="420" cy="158" r="4" fill="#34d399" opacity="0.6"/>
-            <text x="550" y="162" fill="white" font-size="13" font-weight="700" text-anchor="middle" font-family="JetBrains Mono">Leader Orchestrator</text>
-            <text x="550" y="182" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="JetBrains Mono">Coordinate &#183; Decide &#183; Route</text>
+            <text x="550" y="162" fill="white" font-size="13" font-weight="700" text-anchor="middle" font-family="JetBrains Mono">Leader 编排器</text>
+            <text x="550" y="182" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="JetBrains Mono">协调 &#183; 决策 &#183; 路由</text>
             <!-- Allowed badge -->
             <rect x="410" y="186" width="42" height="14" rx="3" fill="rgba(6,78,59,0.6)"/>
             <text x="431" y="196" fill="#34d399" font-size="7" text-anchor="middle" font-family="JetBrains Mono">Read</text>
@@ -159,63 +159,63 @@
             <!-- ===== CORE TEAM ===== -->
             <rect x="40" y="258" width="320" height="220" rx="8" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="6,3"/>
             <text x="200" y="278" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">Core Team</text>
-            <text x="200" y="292" fill="#475569" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Created at Phase 0 | Opus model</text>
+            <text x="200" y="292" fill="#475569" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Phase 0 创建 | Opus 模型</text>
 
             <!-- requirements-analyst -->
             <rect x="60" y="305" width="280" height="42" rx="5" fill="#0f172a"/>
             <rect x="60" y="305" width="280" height="42" rx="5" fill="rgba(6,78,59,0.3)" stroke="#34d399" stroke-width="1" opacity="0.7"/>
             <text x="200" y="324" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">requirements-analyst</text>
-            <text x="200" y="340" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Requirements Analyst &#183; Phase 1, 6</text>
+            <text x="200" y="340" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">需求分析师 &#183; Phase 1, 6</text>
 
             <!-- architect -->
             <rect x="60" y="355" width="280" height="42" rx="5" fill="#0f172a"/>
             <rect x="60" y="355" width="280" height="42" rx="5" fill="rgba(6,78,59,0.3)" stroke="#34d399" stroke-width="1" opacity="0.7"/>
             <text x="200" y="374" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">architect</text>
-            <text x="200" y="390" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Architect &#183; Phase 1</text>
+            <text x="200" y="390" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">架构师 &#183; Phase 1</text>
 
             <!-- planner -->
             <rect x="60" y="405" width="280" height="42" rx="5" fill="#0f172a"/>
             <rect x="60" y="405" width="280" height="42" rx="5" fill="rgba(6,78,59,0.3)" stroke="#34d399" stroke-width="1" opacity="0.7"/>
             <text x="200" y="424" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">planner</text>
-            <text x="200" y="440" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Planner &#183; Phase 2</text>
+            <text x="200" y="440" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">规划师 &#183; Phase 2</text>
 
             <!-- ===== DEV TEAM ===== -->
             <rect x="390" y="258" width="320" height="220" rx="8" fill="none" stroke="#22d3ee" stroke-width="1" stroke-dasharray="6,3"/>
             <text x="550" y="278" fill="#22d3ee" font-size="10" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">Dev Team</text>
-            <text x="550" y="292" fill="#475569" font-size="8" text-anchor="middle" font-family="JetBrains Mono">On-demand after Gate 1 | Sonnet model</text>
+            <text x="550" y="292" fill="#475569" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Gate 1 后按需创建 | Sonnet 模型</text>
 
             <!-- backend-developer -->
             <rect x="410" y="305" width="280" height="42" rx="5" fill="#0f172a"/>
             <rect x="410" y="305" width="280" height="42" rx="5" fill="rgba(8,51,68,0.3)" stroke="#22d3ee" stroke-width="1" opacity="0.7"/>
             <text x="550" y="324" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">backend-developer</text>
-            <text x="550" y="340" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Backend Developer &#183; Phase 2, 3, 6</text>
+            <text x="550" y="340" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">后端开发 &#183; Phase 2, 3, 6</text>
 
             <!-- frontend-developer -->
             <rect x="410" y="355" width="280" height="42" rx="5" fill="#0f172a"/>
             <rect x="410" y="355" width="280" height="42" rx="5" fill="rgba(8,51,68,0.3)" stroke="#22d3ee" stroke-width="1" opacity="0.7"/>
             <text x="550" y="374" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">frontend-developer</text>
-            <text x="550" y="390" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Frontend Developer &#183; Phase 3, 6</text>
+            <text x="550" y="390" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">前端开发 &#183; Phase 3, 6</text>
 
             <!-- worktree indicator -->
             <rect x="435" y="410" width="230" height="24" rx="4" fill="rgba(251,146,60,0.15)" stroke="#fb923c" stroke-width="0.8" stroke-dasharray="3,2"/>
-            <text x="550" y="426" fill="#fb923c" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Same-repo conflict &#x2192; Worktree isolation</text>
+            <text x="550" y="426" fill="#fb923c" font-size="8" text-anchor="middle" font-family="JetBrains Mono">同仓库冲突 &#x2192; Worktree 隔离</text>
 
             <!-- ===== REVIEW TEAM ===== -->
             <rect x="750" y="258" width="310" height="220" rx="8" fill="none" stroke="#fb7185" stroke-width="1" stroke-dasharray="6,3"/>
             <text x="905" y="278" fill="#fb7185" font-size="10" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">Review Team</text>
-            <text x="905" y="292" fill="#475569" font-size="8" text-anchor="middle" font-family="JetBrains Mono">On-demand before Phase 4/5 | Sonnet</text>
+            <text x="905" y="292" fill="#475569" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Phase 4/5 前按需创建 | Sonnet</text>
 
             <!-- code-reviewer -->
             <rect x="770" y="305" width="270" height="42" rx="5" fill="#0f172a"/>
             <rect x="770" y="305" width="270" height="42" rx="5" fill="rgba(136,19,55,0.2)" stroke="#fb7185" stroke-width="1" opacity="0.7"/>
             <text x="905" y="324" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">code-reviewer</text>
-            <text x="905" y="340" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Code Review &#183; Phase 4</text>
+            <text x="905" y="340" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">代码评审 &#183; Phase 4</text>
 
             <!-- tester -->
             <rect x="770" y="355" width="270" height="42" rx="5" fill="#0f172a"/>
             <rect x="770" y="355" width="270" height="42" rx="5" fill="rgba(136,19,55,0.2)" stroke="#fb7185" stroke-width="1" opacity="0.7"/>
             <text x="905" y="374" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">tester</text>
-            <text x="905" y="390" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Test Verification &#183; Phase 5</text>
+            <text x="905" y="390" fill="#64748b" font-size="8" text-anchor="middle" font-family="JetBrains Mono">测试验证 &#183; Phase 5</text>
 
             <!-- Severity badges -->
             <rect x="785" y="410" width="50" height="14" rx="3" fill="rgba(239,68,68,0.3)"/>
@@ -237,26 +237,26 @@
             <text x="160" y="585" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">Atlassian Rovo</text>
             <text x="160" y="600" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Jira / Confluence</text>
             <text x="160" y="616" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">getJiraIssue | transition | edit</text>
-            <rect x="68" y="622" width="42" height="10" rx="2" fill="rgba(239,68,68,0.3)"/>
-            <text x="89" y="630" fill="#ef4444" font-size="6" text-anchor="middle" font-family="JetBrains Mono">Required</text>
+            <rect x="68" y="622" width="30" height="10" rx="2" fill="rgba(239,68,68,0.3)"/>
+            <text x="83" y="630" fill="#ef4444" font-size="6" text-anchor="middle" font-family="JetBrains Mono">必选</text>
 
             <!-- MySQL -->
             <rect x="275" y="562" width="115" height="75" rx="5" fill="#0f172a"/>
             <rect x="275" y="562" width="115" height="75" rx="5" fill="rgba(76,29,149,0.3)" stroke="#a78bfa" stroke-width="1.2"/>
             <text x="332" y="585" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">MySQL</text>
             <text x="332" y="600" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Database</text>
-            <text x="332" y="616" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">Data Validation</text>
-            <rect x="283" y="622" width="36" height="10" rx="2" fill="rgba(100,116,139,0.3)"/>
-            <text x="301" y="630" fill="#64748b" font-size="6" text-anchor="middle" font-family="JetBrains Mono">Optional</text>
+            <text x="332" y="616" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">数据验证</text>
+            <rect x="283" y="622" width="30" height="10" rx="2" fill="rgba(100,116,139,0.3)"/>
+            <text x="298" y="630" fill="#64748b" font-size="6" text-anchor="middle" font-family="JetBrains Mono">可选</text>
 
             <!-- Playwright -->
             <rect x="405" y="562" width="110" height="75" rx="5" fill="#0f172a"/>
             <rect x="405" y="562" width="110" height="75" rx="5" fill="rgba(8,51,68,0.3)" stroke="#22d3ee" stroke-width="1.2"/>
             <text x="460" y="585" fill="white" font-size="11" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">Playwright</text>
             <text x="460" y="600" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">E2E Testing</text>
-            <text x="460" y="616" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">Browser Automation</text>
-            <rect x="413" y="622" width="36" height="10" rx="2" fill="rgba(100,116,139,0.3)"/>
-            <text x="431" y="630" fill="#64748b" font-size="6" text-anchor="middle" font-family="JetBrains Mono">Optional</text>
+            <text x="460" y="616" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">浏览器自动化</text>
+            <rect x="413" y="622" width="30" height="10" rx="2" fill="rgba(100,116,139,0.3)"/>
+            <text x="428" y="630" fill="#64748b" font-size="6" text-anchor="middle" font-family="JetBrains Mono">可选</text>
 
             <!-- ===== CONFIG LAYERS ===== -->
             <rect x="570" y="530" width="490" height="125" rx="8" fill="none" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3"/>
@@ -266,7 +266,7 @@
             <rect x="590" y="562" width="130" height="75" rx="5" fill="#0f172a"/>
             <rect x="590" y="562" width="130" height="75" rx="5" fill="rgba(76,29,149,0.3)" stroke="#a78bfa" stroke-width="1.2"/>
             <text x="655" y="585" fill="white" font-size="10" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">projects.json</text>
-            <text x="655" y="600" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Global Index</text>
+            <text x="655" y="600" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">全局索引</text>
             <text x="655" y="614" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">path &#x2192; name</text>
             <text x="655" y="628" fill="#475569" font-size="7" text-anchor="middle" font-family="JetBrains Mono">~/.claude/configs/</text>
 
@@ -277,8 +277,8 @@
             <rect x="750" y="562" width="140" height="75" rx="5" fill="#0f172a"/>
             <rect x="750" y="562" width="140" height="75" rx="5" fill="rgba(76,29,149,0.3)" stroke="#a78bfa" stroke-width="1.2"/>
             <text x="820" y="585" fill="white" font-size="10" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">project-config</text>
-            <text x="820" y="600" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Project Config</text>
-            <text x="820" y="614" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">Repos &#183; Database &#183; Env</text>
+            <text x="820" y="600" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">项目配置</text>
+            <text x="820" y="614" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">仓库&#183;数据库&#183;环境</text>
             <text x="820" y="628" fill="#475569" font-size="7" text-anchor="middle" font-family="JetBrains Mono">{root}/.claude/</text>
 
             <!-- Arrow: project-config → jira-flow config -->
@@ -288,15 +288,15 @@
             <rect x="920" y="562" width="120" height="75" rx="5" fill="#0f172a"/>
             <rect x="920" y="562" width="120" height="75" rx="5" fill="rgba(76,29,149,0.3)" stroke="#a78bfa" stroke-width="1.2"/>
             <text x="980" y="582" fill="white" font-size="10" font-weight="600" text-anchor="middle" font-family="JetBrains Mono">jira-flow</text>
-            <text x="980" y="597" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">Flow Config</text>
-            <text x="980" y="610" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">cloudId &#183; Branch Naming</text>
+            <text x="980" y="597" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="JetBrains Mono">流程配置</text>
+            <text x="980" y="610" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">cloudId&#183;分支命名</text>
             <text x="980" y="623" fill="#64748b" font-size="7" text-anchor="middle" font-family="JetBrains Mono">openspec:</text>
             <text x="980" y="633" fill="#a78bfa" font-size="6" text-anchor="middle" font-family="JetBrains Mono">changes + baseline</text>
 
             <!-- ===== SUPERPOWERS ===== -->
             <rect x="40" y="690" width="1020" height="60" rx="8" fill="none" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,3"/>
             <text x="90" y="712" fill="#fbbf24" font-size="10" font-weight="600" font-family="JetBrains Mono">Superpowers</text>
-            <text x="90" y="726" fill="#475569" font-size="7" font-family="JetBrains Mono">v5.0+ Methodology Plugin</text>
+            <text x="90" y="726" fill="#475569" font-size="7" font-family="JetBrains Mono">v5.0+ 方法论插件</text>
 
             <!-- Skill pills -->
             <rect x="195" y="700" width="78" height="18" rx="4" fill="rgba(6,78,59,0.4)"/>
@@ -350,37 +350,37 @@
         <div class="card">
             <div class="card-header">
                 <div class="card-dot green"></div>
-                <h3>Hub-and-Spoke Pattern</h3>
+                <h3>Hub-and-Spoke 模式</h3>
             </div>
             <ul>
-                <li>Leader never executes operations directly</li>
-                <li>Only coordinates, decides, and manages state transitions</li>
-                <li>All inter-agent communication is routed through Leader</li>
-                <li>Agents are strictly forbidden from direct connections</li>
+                <li>Leader 永远不直接执行操作</li>
+                <li>只做协调、决策和状态流转</li>
+                <li>所有 Agent 间通信通过 Leader 路由</li>
+                <li>Agent 严禁直连其他 Agent</li>
             </ul>
         </div>
         <div class="card">
             <div class="card-header">
                 <div class="card-dot cyan"></div>
-                <h3>On-Demand Scaling</h3>
+                <h3>按需扩容策略</h3>
             </div>
             <ul>
-                <li>Phase 0: Core team (req/planner/arch)</li>
-                <li>After Gate 1: Dev team created on demand</li>
-                <li>Before Phase 4: Create code-reviewer</li>
-                <li>Before Phase 5: Create tester</li>
+                <li>Phase 0: 核心团队 (req/planner/arch)</li>
+                <li>Gate 1 后: 按需创建开发团队</li>
+                <li>Phase 4 前: 创建 code-reviewer</li>
+                <li>Phase 5 前: 创建 tester</li>
             </ul>
         </div>
         <div class="card">
             <div class="card-header">
                 <div class="card-dot violet"></div>
-                <h3>6 Gate Quality Checkpoints</h3>
+                <h3>6 Gate 质量检查点</h3>
             </div>
             <ul>
-                <li>Gate executed at the end of each Phase</li>
-                <li>Semi-auto: continues after user confirmation</li>
-                <li>Full-auto: passes automatically when quality is met</li>
-                <li>CRITICAL/HIGH issues must be fixed</li>
+                <li>每个 Phase 结束执行 Gate</li>
+                <li>半自动: 用户确认后继续</li>
+                <li>全自动: 质量达标自动通过</li>
+                <li>CRITICAL/HIGH 必须修复</li>
             </ul>
         </div>
     </div>

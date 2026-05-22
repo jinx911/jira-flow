@@ -116,4 +116,13 @@ Tech stack:
 Role-specific config: The Leader will pass any config you need (database/migration/build/test environment) via messages when assigning tasks
   Full project config: {root_path}/.claude/project-config.md (Read to get role-specific info)
   jira-flow process config: ~/.claude/skills/jira-flow/project-config.md
+
+CodeGraph (if .codegraph/ exists in {root_path}):
+  The target project has a pre-indexed code knowledge graph. Use it to understand code faster:
+  - codegraph_search: Find symbols by name
+  - codegraph_callers / codegraph_callees: Trace call flow
+  - codegraph_impact: Check what's affected before editing
+  - codegraph_context: Build relevant code context for a task (use in Explore agents only, not in main session)
+  - codegraph_node: Get a single symbol's details
+  Prefer these tools over grep/glob/Read for code exploration tasks.
 ```

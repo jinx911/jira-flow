@@ -127,6 +127,10 @@ Verify the following dependencies are ready. Summarize any missing items and pro
    - code-reviewer, tester (review/test team)
 4. Atlassian-rovo MCP is available (try `mcp__atlassian-rovo__atlassianUserInfo`)
 5. Pending cleanup: empty directories under `{changes_path}`. Delegate to the first Bash-capable agent (backend-developer / frontend-developer) spawned after Gate 1 to run `find {changes_path} -type d -empty -delete`. Non-blocking — cleanup failure does not affect the flow.
+6. CodeGraph: check if `.codegraph/` exists in `{root_path}`:
+   - Exists → agents will automatically use CodeGraph tools for code exploration (configured via team-rules.md)
+   - Does not exist → AskUserQuestion: "CodeGraph is not initialized for this project. Initialize it for faster code understanding? (codegraph init -i)"
+   - User declines → proceed without CodeGraph; agents use standard grep/glob/Read
 → All ready → continue
 
 ### 1. Parse + Configure

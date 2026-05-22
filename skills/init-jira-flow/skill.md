@@ -187,6 +187,19 @@ build_commands:
   frontend: "{detected frontend build command}"
   backend: "{detected backend build command}"
 
+## Jira Workflow
+
+jira_workflow:
+  testing_status: "测试中"              # Main issue → this status triggers sub-issue creation
+  auto_creates_sub: true                # Does transitioning auto-create sub-issues?
+  sub_completion_status: "已完成"       # Sub-issues → this status after filling testing notes
+  testing_note_template: |
+    Change overview: <summary>
+    Affected modules: <modules>
+    Testing highlights: <key results>
+    Prerequisites: <setup needed>
+    Verification steps: <how to verify>
+
 ## Migration
 
 migration:
@@ -226,6 +239,8 @@ cloudId: {auto_detected}
 Additional config:
 - Branch naming format: {format} (customizable)
 - OpenSpec paths: changes={c}, baseline={b}
+- Jira workflow: testing_status=测试中, auto_creates_sub=true, sub_completion_status=已完成
+  (Customize these if your Jira uses different status names)
 - Test environment available? (optional, can be added later)
 - Deploy branch? (optional)
 ```
@@ -338,6 +353,7 @@ Checklist:
   [ ] {root_path}/.claude/hooks/ — directory exists
   [ ] {root_path}/{changes_path}/ — directory exists
   [ ] {root_path}/{baseline_path}/ — directory exists
+  [ ] jira_workflow — present in project-config.md with testing_status and sub_completion_status
   [ ] ~/.claude/configs/projects.json — contains new entry
   [ ] atlassian-rovo MCP — connected
 

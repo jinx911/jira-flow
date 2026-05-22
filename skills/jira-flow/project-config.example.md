@@ -55,21 +55,25 @@ git:
 # deploy_branch: "test"
 # If omitted, Phase 6 will skip the merge-to-deploy-branch step.
 
-## Jira Workflow (optional)
+## Jira Workflow
 
-# Custom Jira transitions for Phase 6 finalization.
-# If omitted, Leader will use getTransitionsForJiraIssue to discover available transitions.
+# jira-flow uses the following defaults if this section is omitted:
+#   testing_status: auto-detect (looks for 'Test'/'测试' in available transitions)
+#   auto_creates_sub: true
+#   sub_completion_status: auto-detect (looks for 'Done'/'完成' in available transitions)
+#   testing_note_template: built-in 5-field template (Change overview, Affected modules, Testing highlights, Prerequisites, Verification steps)
 #
+# Override if your Jira uses non-standard status names:
 # jira_workflow:
-#   testing_status: "In Testing"              # Transition main issue to this status
-#   auto_creates_sub: true                     # Does transitioning auto-create sub-issues?
-#   sub_completion_status: "Done"              # Transition sub-issues to this status
+#   testing_status: "In Testing"
+#   auto_creates_sub: true
+#   sub_completion_status: "Done"
 #   testing_note_template: |
-#     Change summary: <summary>
+#     Change overview: <summary>
 #     Affected modules: <modules>
-#     Test focus areas: <test_points>
-#     Prerequisites: <prerequisites>
-#     Verification steps: <steps>
+#     Testing highlights: <key results>
+#     Prerequisites: <setup needed>
+#     Verification steps: <how to verify>
 
 ## Database MCP
 

@@ -227,6 +227,7 @@ All exceptions flow: teammate → Leader → Leader evaluates → Leader forward
 | Requirements/design issue | Revise and re-Gate ≤2 times | Leader asks user whether to abort |
 | Task conflict | Planner re-sequences ≤1 time | Leader decides serialization or worktree |
 | Agent unresponsive | Resend message 1 time | Leader asks user |
+| Agent context exhausted | Spawn replacement agent ≤1 time | Leader asks user |
 | MCP connection failure | Retry ≤2 times | Save state, prompt user to resume after recovery |
 
 Any exception exceeding its limit → Leader must escalate to the user; do not continue retrying automatically.
@@ -235,9 +236,33 @@ Any exception exceeding its limit → Leader must escalate to the user; do not c
 
 Leader behavior while waiting for agent replies:
 - **Normal wait**: While an agent is executing a task, the Leader stands by (no hard timeout)
-- **No-response detection**: If an agent does not reply within the expected timeframe (Phase 1-2: 5 minutes; Phase 3-5: 10 minutes), the Leader sends a ping message
-- **Ping unanswered**: Leader uses AskUserQuestion to ask user: wait / skip / terminate
+- **No-response detection (Level 1)**: If an agent does not reply within the expected timeframe (Phase 1-2: 5 minutes; Phase 3-5: 10 minutes), the Leader sends a ping message
+- **Context exhaustion detection (Level 2)**: If ping is unanswered AND the agent's last message or progress report was >15 minutes ago → 判定 context_exhausted
+- **Ping unanswered (Level 1 only)**: Leader uses AskUserQuestion to ask user: wait / skip / terminate
 - **Agent proactively reports blocking**: Not a timeout — handle via the normal exception path
+
+### Context Exhaustion Recovery
+
+When the Leader detects context_exhausted for an agent:
+
+1. Read state.json → get agent's task assignments and context snapshot
+2. Spawn a replacement agent (same role + team-rules.md), injecting:
+   - Original task description (from the corresponding phase-N-brief.md)
+   - Phase decisions: state.json → phase_decisions[current_phase]
+   - Agent's last context snapshot: state.json → agent_context_snapshots[<agent_name>]
+   - Instruction: "Previous agent ran out of context. Continue from where it left off. Do NOT restart completed work."
+3. Update state.json:
+   - Replace the exhausted agent in spawned_agents
+   - Reset agent_context_snapshots[<agent_name>]
+4. New agent continues without restarting
+5. If replacement also exhausts context → escalate to user (do not spawn a third agent)
+
+### Leader Context Protection
+
+After each Gate passes:
+1. Persist Gate summary to state.json (see gate.md for procedure)
+2. Execute `/compact` to compress the Leader's own context
+3. If `/compact` causes loss of recent context → read state.json to restore phase_decisions and gate_summaries
 
 ### Exception Routing
 

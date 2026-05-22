@@ -32,7 +32,7 @@ The fully substituted text is passed as the Agent spawn's prompt parameter.
 
 ## Team Communication Rules
 
-```
+````
 ## Team Roles (jira-flow-{issue-key})
 
 You are a member of the jira-flow-<issue-key> team.
@@ -52,6 +52,33 @@ You are a member of the jira-flow-<issue-key> team.
 - Send a completion message to the Leader
 - If a build fails, attempt to self-fix (up to 2 times); if still failing, notify the Leader
 
+### Message Format (Context Protection)
+- **Completion Report** — When finishing a task or sub-task, send to Leader using this exact format:
+  ```
+  ## Task Completion Report
+
+  **Status**: completed | failed | blocked
+  **Summary**: ≤3 sentences describing the result
+  **Files Changed**: [file list, max 10]
+  **Test Result**: pass/fail/N/A + key metrics (e.g., coverage %)
+  **Issues**: [blocker descriptions, or "None"]
+  ```
+  - NEVER include code snippets, diffs, or full file contents in messages
+  - Leader will Read files directly if it needs details
+  - Exception: Phase 1-2 deliverables (proposal.md/design.md) are file-based; only report file paths in the completion message
+
+- **Progress Update** — When executing operations expected to take >3 minutes, send a brief update after each sub-step:
+  ```
+  ## Progress Update
+
+  **Task**: [current task name]
+  **Step**: [current step] / [total steps]
+  **Status**: in_progress
+  **ETA**: [estimated remaining time or "unknown"]
+  ```
+  - This is critical: Leader uses progress updates to distinguish "agent is busy" from "agent context exhausted"
+  - Failing to send progress updates may cause Leader to incorrectly判定 context exhaustion and spawn a replacement agent
+
 ### Exception Escalation (full chain via Leader)
 When you discover an issue:
   1. Assess the nature of the problem
@@ -60,7 +87,7 @@ When you discover an issue:
   4. When receiving an evaluation/confirmation request forwarded by the Leader, reply to the Leader (not the original requester)
 
 Current status: Ready and waiting for task assignment from the Leader.
-```
+````
 
 ---
 

@@ -32,17 +32,33 @@ If deploy_branch is not configured → skip this step
 ## 4. Jira Wrap-Up
 
 Leader → requirements-analyst: "Perform Jira wrap-up operations:
-   Reference {root_path}/.claude/project-config.md → jira_workflow (if configured), otherwise discover dynamically via MCP:
-   a. getTransitionsForJiraIssue to get the transition ID for the target status
-      → If jira_workflow.testing_status exists: use the configured value
-      → If not configured: list available transitions and ask the Leader to select
-   b. Transition the main Jira issue to the target status
-   c. If jira_workflow.auto_creates_sub == true:
-      searchJiraIssuesUsingJql to search for auto-created sub-issues by parent
-   d. editJiraIssue to fill in the testing notes (based on proposal summary + change scope + test results)
-      → If jira_workflow.testing_note_template exists: use the template
-      → If not configured: use default format (change overview, modules affected, testing highlights, prerequisites, verification steps)
-   e. Transition sub-issues → jira_workflow.sub_completion_status"
+
+   Reference {root_path}/.claude/project-config.md → jira_workflow (if configured) for status names and template overrides.
+   If jira_workflow is not configured, use the following defaults:
+
+   a. getTransitionsForJiraIssue → find the transition ID for the testing status
+      Configured: use jira_workflow.testing_status
+      Default: look for a status containing 'Test' or '测试' (e.g., 'In Testing', '测试中')
+
+   b. Transition the MAIN issue to the testing status
+      **IMPORTANT**: This transition triggers automatic creation of sub-issues (with testing note fields).
+      Wait a moment for auto-creation to complete, then proceed to step c.
+
+   c. searchJiraIssuesUsingJql → search for auto-created sub-issues by parent
+      JQL: parent = {issue_key} ORDER BY created DESC
+
+   d. editJiraIssue → fill in the testing notes on EACH SUB-ISSUE
+      Content based on: proposal summary + change scope + test results
+      Template: use jira_workflow.testing_note_template if configured, otherwise use default:
+        - Change overview: <summary of changes>
+        - Affected modules: <modules involved>
+        - Testing highlights: <key test results>
+        - Prerequisites: <what needs to be set up before testing>
+        - Verification steps: <how to verify the changes>
+
+   e. transition EACH SUB-ISSUE to completion status
+      Configured: use jira_workflow.sub_completion_status
+      Default: look for a status containing 'Done' or '完成' (e.g., 'Done', '已完成')"
 
 ## 5. Cleanup
 

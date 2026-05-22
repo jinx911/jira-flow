@@ -19,15 +19,44 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
   "mode": "semi-auto",
   "branch": "<branch-name>",
   "current_phase": 3,
-  "spawned_agents": ["requirements-analyst", "architect", "planner", "backend-dev"],  // "backend-dev" is the team role name; agent file is backend-developer.md
+  "spawned_agents": ["requirements-analyst", "architect", "planner", "backend-dev"],
   "openspec_name": "{spec_name}",
   "gate_summaries": {
     "1": "proposal: xxx, design: xxx",
     "2": "tasks: 12 total, branch: OA-3650"
   },
+  "phase_decisions": {
+    "1": {
+      "scope": "Backend API for user auth",
+      "key_files": ["src/auth/controller.ts", "src/auth/service.ts"],
+      "architecture_choice": "JWT + refresh token",
+      "risks": ["New table needed - requires DBA review"]
+    }
+  },
+  "agent_context_snapshots": {
+    "backend-dev": {
+      "last_progress": "Step 5/8: implementing auth service",
+      "last_files_changed": ["src/auth/service.ts", "tests/auth/service.test.ts"],
+      "last_update": "2026-05-22T10:30:00Z"
+    }
+  },
   "updated_at": "<ISO>"
 }
 ```
+
+### New Fields
+
+| Field | Purpose | Updated When |
+|-------|---------|-------------|
+| `phase_decisions` | Key decisions per phase (≤100 chars/field) | After each Gate passes |
+| `agent_context_snapshots` | Last known progress per agent | On every agent progress report / completion |
+
+### Persistence Timing
+
+- **Gate passes**: Leader writes `gate_summaries` + `phase_decisions` + advances `current_phase`
+- **Agent progress report received**: Leader updates `agent_context_snapshots[agent_name]`
+- **Agent task completes**: Leader updates corresponding snapshot
+- **Phase 3 — each task completed**: Leader updates snapshot for the dev agent
 
 ## Recovery Procedure
 
@@ -37,15 +66,16 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
    → No: Delete state, start from scratch
    → Yes:
 3. Re-spawn all agents listed in state.spawned_agents (appending team-rules.md)
-4. Determine breakpoint → jump to the corresponding Phase:
+4. For each re-spawned agent, inject context from state:
+   - phase_decisions[current_phase] → agent gets key decisions from prior phases
+   - agent_context_snapshots[agent_name] → agent knows where the previous instance left off
+5. Determine breakpoint → jump to the corresponding Phase:
    current_phase == 1: proposal.md exists → Phase 2, otherwise → Phase 1
    current_phase == 2: tasks.md exists → Phase 3, otherwise → Phase 2
    current_phase == 3: TaskList has incomplete tasks → continue Phase 3, otherwise → Phase 4
    current_phase == 4-6: Start from that Phase
-5. Agents read context from disk files (proposal/design/tasks)
+6. Agents read context from disk files (proposal/design/tasks) AND state.json phase_decisions
 ```
-
-## Persistence Timing
 
 After each Gate confirmation, the Leader updates the state file (setting current_phase to the next Phase number).
 After Phase 6 completes, the state file is deleted.

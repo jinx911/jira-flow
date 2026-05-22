@@ -11,8 +11,6 @@ description: Phase 1 complete instructions for requirements analysis. Leader rea
 Leader → requirements-analyst: "Read Jira issue {key} via Atlassian MCP (including description, comments, and attachments),
   analyze the requirements, and generate an OpenSpec proposal.md.
 
-  Pre-cleanup: Run `find {changes_path} -type d -empty -delete` to remove residual empty directories.
-
   [superpowers:brainstorming]
   First read the superpowers brainstorming SKILL.md for the full methodology.
   Key constraints:

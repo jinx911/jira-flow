@@ -25,7 +25,11 @@ description: Phase 3 complete instructions for TDD development. Leader reads thi
     Frontend development: Reference {root_path}/.claude/project-config.md → frontend_build (must build after changes to take effect).
     If multiple development agents need to modify the same repository → use worktree isolation.
     If issues arise, follow the escalation path defined in team-rules.md."
-3. Leader monitors: on completion report → TaskUpdate + notify waiting agents; on exception → handle per exception protocol
+3. Leader monitors:
+   - On progress update → update state.json agent_context_snapshots[agent_name]
+   - On completion report → TaskUpdate + notify waiting agents
+   - On exception → handle per exception protocol
+   - On no message for 10 min → ping agent; on ping unanswered + 15 min silence → context exhaustion recovery (see skill.md)
 
 ## Frontend-Backend Parallel Conflict Coordination
 

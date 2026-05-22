@@ -77,8 +77,6 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
 6. Agents read context from disk files (proposal/design/tasks) AND state.json phase_decisions
 ```
 
-## Persistence Timing
-
 After each Gate confirmation, the Leader updates the state file (setting current_phase to the next Phase number).
 After Phase 6 completes, the state file is deleted.
 

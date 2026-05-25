@@ -63,6 +63,7 @@ dependencies:
 | Behavior | Semi-Auto (default) | Full-Auto |
 |----------|---------------------|-----------|
 | Gate | Display summary + AskUserQuestion for confirmation | Auto-pass, log summary without interrupting |
+| Phase 1 Checkpoints | **Interactive** — Checkpoint A/B require user input, C conditional | Auto-pass all checkpoints, use recommended options |
 | Exceptions | All exceptions prompt the user | Only prompt when retry limit is exceeded |
 | Jira Finalization | Display testing notes for user confirmation before submitting | Auto-submit |
 | Branch Operations | Display branch info for confirmation before executing | Auto-execute |
@@ -209,7 +210,7 @@ Scale on demand (after Gate 1 / before Phase 4 / before Phase 5) using Agent spa
 
 | Phase | Output | Gate |
 |-------|--------|------|
-| 1 Requirements Analysis | proposal.md + design.md | Confirm → spawn dev agents |
+| 1 Requirements Analysis (Interactive) | proposal.md + design.md (4 steps + Checkpoint A/B/C) | Confirm → spawn dev agents |
 | 2 Task Planning + Branch | tasks.md + git branch | Confirm task list + branch info |
 | 3 TDD Development | Implementation code | Confirm progress |
 | 4 Code Review | Review report | CRITICAL/HIGH → fix |

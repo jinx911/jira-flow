@@ -19,6 +19,7 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
   "mode": "semi-auto",
   "branch": "<branch-name>",
   "current_phase": 3,
+  "phase1_substep": "gate1",
   "spawned_agents": ["requirements-analyst", "architect", "planner", "backend-dev"],
   "openspec_name": "{spec_name}",
   "gate_summaries": {
@@ -32,6 +33,10 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
       "architecture_choice": "JWT + refresh token",
       "risks": ["New table needed - requires DBA review"]
     }
+  },
+  "user_answers": {
+    "checkpoint_a": "<user requirement confirmation>",
+    "checkpoint_b": "<user selected option>"
   },
   "agent_context_snapshots": {
     "backend-dev": {
@@ -50,6 +55,8 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
 |-------|---------|-------------|
 | `phase_decisions` | Key decisions per phase (≤100 chars/field) | After each Gate passes |
 | `agent_context_snapshots` | Last known progress per agent | On every agent progress report / completion |
+| `phase1_substep` | Phase 1 internal step tracking ("step1"\|"step2"\|"step3"\|"step4"\|"gate1") | After each Phase 1 step completes |
+| `user_answers` | User responses from Phase 1 Checkpoint A and B | After each checkpoint interaction |
 
 ### Persistence Timing
 
@@ -70,7 +77,12 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
    - phase_decisions[current_phase] → agent gets key decisions from prior phases
    - agent_context_snapshots[agent_name] → agent knows where the previous instance left off
 5. Determine breakpoint → jump to the corresponding Phase:
-   current_phase == 1: proposal.md exists → Phase 2, otherwise → Phase 1
+   current_phase == 1:
+     phase1_substep not set or "step1" → Step 1 (initial analysis)
+     phase1_substep == "step2" → Step 2 (options proposal, re-use user_answers.checkpoint_a)
+     phase1_substep == "step3" → Step 3 (generate proposal, re-use user_answers.checkpoint_b)
+     phase1_substep == "step4" → Step 4 (architecture design)
+     phase1_substep == "gate1" → Gate 1
    current_phase == 2: tasks.md exists → Phase 3, otherwise → Phase 2
    current_phase == 3: TaskList has incomplete tasks → continue Phase 3, otherwise → Phase 4
    current_phase == 4-6: Start from that Phase

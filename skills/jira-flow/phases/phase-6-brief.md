@@ -1,6 +1,6 @@
 ---
 partOf: jira-flow
-version: 1.0.0
+version: 1.0.1
 description: Phase 6 complete instructions for wrap-up. Leader reads this file when entering Phase 6.
 ---
 
@@ -47,18 +47,24 @@ Leader → requirements-analyst: "Perform Jira wrap-up operations:
    c. searchJiraIssuesUsingJql → search for auto-created sub-issues by parent
       JQL: parent = {issue_key} ORDER BY created DESC
 
-   d. editJiraIssue → fill in the testing notes on EACH SUB-ISSUE
-      Content based on: proposal summary + change scope + test results
-      Template: use jira_workflow.testing_note_template if configured, otherwise use default:
-        - Change overview: <summary of changes>
-        - Affected modules: <modules involved>
-        - Testing highlights: <key test results>
-        - Prerequisites: <what needs to be set up before testing>
-        - Verification steps: <how to verify the changes>
+   d. For EACH SUB-ISSUE, classify by summary and handle accordingly:
 
-   e. transition EACH SUB-ISSUE to completion status
+      **「提测说明」类型** (summary contains "提测说明"):
+      - editJiraIssue → fill in the testing notes
+        Content based on: proposal summary + change scope + test results
+        Template: use jira_workflow.testing_note_template if configured, otherwise use default:
+          - Change overview: <summary of changes>
+          - Affected modules: <modules involved>
+          - Testing highlights: <key test results>
+          - Prerequisites: <what needs to be set up before testing>
+          - Verification steps: <how to verify the changes>
+      - transition to completion status
+
+      **「测试计划」类型** (summary contains "测试计划"):
+      - DO NOT modify or transition — leave it for QA team to handle
+
       Configured: use jira_workflow.sub_completion_status
-      Default: look for a status containing 'Done' or '完成' (e.g., 'Done', '已完成')"
+      Default: look for a status containing 'Done' or '完成' (e.g., 'Done', '已完成')
 
 ## 5. Cleanup
 

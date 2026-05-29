@@ -1,28 +1,28 @@
 ---
 partOf: jira-flow
 version: 1.0.0
-description: Phase 4 complete instructions for code review. Leader reads this file when entering Phase 4.
+description: Phase 4 代码评审完整指令。Leader 进入 Phase 4 时 Read 此文件。
 ---
 
-# Phase 4: Code Review
+# Phase 4: 代码评审
 
-Spawn code-reviewer (scale as needed)
+spawn code-reviewer（按需扩容）
 
-Leader → code-reviewer: "Review all changes on the current branch, following the Multi-Round Pipeline defined in the code-review rule.
-  Repository paths: {backend_repo_path}, {frontend_repo_path}.
+Leader → code-reviewer: "评审当前分支所有变更，按 code-review rule 的 Multi-Round Pipeline 执行。
+  仓库路径: {backend_repo_path}, {frontend_repo_path}。
 
   [superpowers:requesting-code-review]
-  First read the superpowers requesting-code-review SKILL.md for the full methodology.
-  Key constraints:
-  - Base the review on git diff output in a structured manner, not on memory
-  - Severity levels: CRITICAL → block merge, HIGH → fix before merge, MEDIUM → suggestion, LOW → optional
-  - For each issue provide: file path:line number, issue description, fix suggestion
-  - Never: skip the review or ignore CRITICAL issues
+  先 Read superpowers requesting-code-review SKILL.md 获取完整方法论。
+  关键约束:
+  - 基于 git diff 结构化评审，不凭记忆
+  - 严重性分级: CRITICAL → 阻断, HIGH → 修后合并, MEDIUM → 建议, LOW → 可选
+  - 对每个问题给出: 文件路径:行号、问题描述、修复建议
+  - 禁止: 跳过评审、忽略 CRITICAL
 
-  On completion, send a message containing the review report (categorized by CRITICAL/HIGH/MEDIUM/LOW)"
+  完成时 SendMessage 包含评审报告（按 CRITICAL/HIGH/MEDIUM/LOW 分级）"
 
-code-reviewer independently: git diff → review per code-review rule pipeline → send report message to Leader
+code-reviewer 自行: git diff → 按 code-review rule pipeline 评审 → SendMessage 报告 Leader
 
 ## Gate 4
 
-Present results → if CRITICAL/HIGH issues exist, Leader delegates fixes to development agents
+展示结果 → CRITICAL/HIGH 则 Leader delegate 给开发 agent 修复

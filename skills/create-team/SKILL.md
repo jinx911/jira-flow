@@ -7,30 +7,30 @@ description: Use when user says "创建团队", "组建团队", "/create-team" �
 
 ## Overview
 
-Create a multi-agent collaboration team. **The main session (the creator) acts as Leader** — no additional leader agent is spawned. All member communication must be routed through the main session.
+创建多 Agent 协作团队。**主会话（创建者）即为 Leader**，不 spawn 额外 leader agent。所有成员通信必须通过主会话路由。
 
-## Invocation Modes
+## 调用模式
 
-Two invocation modes are supported:
+支持两种调用方式：
 
-### Mode A: Interactive (user runs `/create-team` directly)
+### 模式 A：交互式（用户直接 `/create-team`）
 
 ```dot
 digraph {
   rankdir=TB;
-  start [label="User triggers /create-team", shape=box];
-  ask_name [label="AskUserQuestion: team name", shape=box];
-  ask_roles [label="AskUserQuestion: role selection (multi-select)", shape=box];
-  ask_custom [label="If custom selected → AskUserQuestion: name + responsibilities", shape=box];
-  create [label="TeamCreate creates team", shape=box];
-  spawn [label="Spawn all role agents in parallel", shape=box];
-  confirm [label="Report ready status to user", shape=box];
-  done [label="Stand by, awaiting task assignment", shape=box];
+  start [label="用户触发 /create-team", shape=box];
+  ask_name [label="AskUserQuestion: 团队名称", shape=box];
+  ask_roles [label="AskUserQuestion: 角色选择（多选）", shape=box];
+  ask_custom [label="如选自定义 → AskUserQuestion: 名称+职责", shape=box];
+  create [label="TeamCreate 创建团队", shape=box];
+  spawn [label="并行 spawn 所有角色 Agent", shape=box];
+  confirm [label="向用户汇报就位状态", shape=box];
+  done [label="待命，等待任务下发", shape=box];
 
   start -> ask_name;
   ask_name -> ask_roles;
-  ask_roles -> ask_custom [label="Custom selected"];
-  ask_roles -> create [label="No custom"];
+  ask_roles -> ask_custom [label="选了自定义"];
+  ask_roles -> create [label="无自定义"];
   ask_custom -> create;
   create -> spawn;
   spawn -> confirm;
@@ -38,149 +38,149 @@ digraph {
 }
 ```
 
-### Mode B: Programmatic (called by other skills)
+### 模式 B：编程式（其他 skill 调用）
 
-When another skill (e.g. `/jira-flow`) needs to create a team, skip the interactive steps and pass in a configuration directly:
+当其他 skill（如 `/jira-flow`）需要创建团队时，跳过交互步骤，直接传入配置：
 
-**Condition**: If `$ARGUMENTS` contains a predefined team configuration (JSON format), enter programmatic mode.
+**判断条件**：如果 `$ARGUMENTS` 中包含预定义的团队配置（JSON 格式），则进入编程式模式。
 
-**Input format example**:
+**传入格式示例**：
 ```
-/create-team {"team_name":"jira-flow-OA-3650","roles":[{"name":"requirements-analyst","agent":"requirements-analyst"},{"name":"architect","agent":"architect"},{"name":"planner","agent":"planner"},{"name":"backend-dev","agent":"backend-developer"},{"name":"frontend-dev","agent":"frontend-developer"},{"name":"code-reviewer","agent":"code-reviewer"}],"custom_prompt":"<custom prompt content, replaces Worker Prompt template>"}
+/create-team {"team_name":"jira-flow-OA-3650","roles":[{"name":"requirements-analyst","agent":"requirements-analyst"},{"name":"architect","agent":"architect"},{"name":"planner","agent":"planner"},{"name":"backend-dev","agent":"backend-developer"},{"name":"frontend-dev","agent":"frontend-developer"},{"name":"code-reviewer","agent":"code-reviewer"}],"custom_prompt":"<自定义 prompt 内容，替代 Worker Prompt 模板>"}
 ```
 
-**Programmatic flow**:
-1. Parse the JSON configuration
-2. Skip Steps 1-2
-3. Call TeamCreate directly
-4. Use `custom_prompt` instead of the Worker Prompt template when spawning
-5. Report ready status to user
+**编程式流程**：
+1. 解析 JSON 配置
+2. 跳过 Step 1-2
+3. 直接 TeamCreate
+4. spawn 时用 `custom_prompt` 替代 Worker Prompt 模板
+5. 向用户汇报就位状态
 
-## Step 1: Ask for Team Name
+## Step 1: 询问团队名称
 
-Interactive mode only. Use AskUserQuestion, with default value `{project_name}-team`.
+仅交互式模式。使用 AskUserQuestion，默认值 `{项目名}-team`。
 
-## Step 2: Ask for Role Configuration
+## Step 2: 询问角色配置
 
-Interactive mode only.
+仅交互式模式。
 
-Use AskUserQuestion with multi-select. Available roles:
+使用 AskUserQuestion 多选，可选角色：
 
-| Role | name | Prompt source |
-|------|------|--------------|
-| Frontend Developer | frontend-dev | frontend-developer.md |
-| Backend Developer | backend-dev | backend-developer.md |
-| Requirements Analyst | requirements-analyst | requirements-analyst.md |
-| Architect | architect | architect.md |
-| Planner | planner | planner.md |
-| Code Reviewer | code-reviewer | code-reviewer.md |
-| QA Tester | qa-tester | tdd-guide.md + e2e-runner.md |
-| Test Verifier | tester | tester.md |
-| Custom Role | user-specified | user inputs responsibilities |
+| 角色 | name | prompt 来源 |
+|------|------|------------|
+| 前端开发 | frontend-dev | frontend-developer.md |
+| 后端开发 | backend-dev | backend-developer.md |
+| 需求分析师 | requirements-analyst | requirements-analyst.md |
+| 架构师 | architect | architect.md |
+| 规划师 | planner | planner.md |
+| 代码审查 | code-reviewer | code-reviewer.md |
+| QA 测试 | qa-tester | tdd-guide.md + e2e-runner.md |
+| 测试验证 | tester | tester.md |
+| 自定义角色 | 用户指定 | 用户输入职责 |
 
-If "Custom Role" is selected, ask a follow-up AskUserQuestion for: role name + responsibility description.
+如果选了「自定义角色」，追加 AskUserQuestion 询问：角色名称 + 职责描述。
 
-## Step 3: Create Team
+## Step 3: 创建团队
 
 ```json
-TeamCreate({ team_name: "<user-specified name>", description: "<team description>" })
+TeamCreate({ team_name: "<用户指定的名称>", description: "<团队描述>" })
 ```
 
-## Step 4: Spawn Agents in Parallel
+## Step 4: 并行启动 Agents
 
-For each role, spawn using the Agent tool in parallel with the following parameters:
+对每个角色，使用 Agent 工具并行 spawn，参数：
 
 ```
-name: "<role name>"
-team_name: "<team name>"
+name: "<角色 name>"
+team_name: "<团队名称>"
 run_in_background: true
-prompt: "<role prompt>"
+prompt: "<角色 prompt>"
 ```
 
-**All roles use subagent_type: "general-purpose" (full tool permissions, can write code).**
+**所有角色使用 subagent_type: "general-purpose"（全工具权限，可写代码）。**
 
-## Step 5: Report
+## Step 5: 汇报
 
-Display a ready-status table to the user: Role | name | Status.
+向用户展示就位状态表格：角色 | name | 状态。
 
-## Role Definitions
+## 角色定义
 
-### Role Responsibility Templates
+### 角色职责模板
 
-**Frontend Developer:**
-- Responsible for frontend feature development and page implementation
-- Collaborate with backend to complete API integration
-- Write frontend unit tests and E2E tests
+**前端开发：**
+- 负责前端功能开发与页面实现
+- 与后端协作完成接口对接
+- 编写前端单元测试和 E2E 测试
 
-**Backend Developer:**
-- Responsible for backend feature development and API interface design
-- Database design and migrations
-- Write backend unit tests and integration tests
+**后端开发：**
+- 负责后端功能开发与 API 接口设计
+- 数据库设计与迁移
+- 编写后端单元测试和集成测试
 
-**Requirements Analyst:**
-- Analyze user requirements and produce requirement documents
-- Break down requirements into clear development tasks
-- Check requirement completeness, identify gaps and conflicts
+**需求分析师：**
+- 分析用户需求，产出需求文档
+- 将需求拆解为明确开发任务
+- 检查需求完整性，识别遗漏和冲突
 
-**QA Tester:**
-- Write and execute test cases (unit, integration, E2E)
-- Report bugs and track fix status
-- Verify bug fixes, execute regression testing
+**QA 测试：**
+- 编写和执行测试用例（单元、集成、E2E）
+- 报告 Bug 并跟踪修复状态
+- 验证 Bug 修复结果，执行回归测试
 
-## Leader Role
+## Leader 角色说明
 
-**The main session (i.e. the Claude instance that invoked /create-team) automatically assumes the Leader role** — no separate leader agent should be spawned.
+**主会话（即调用 /create-team 的 Claude 实例）自动承担 Leader 角色**，不需要也不应该 spawn 额外的 leader agent。
 
-Leader responsibilities (executed by the main session):
-- Receive user tasks and coordinate according to the workflow defined in workflow.md
-- Manage tasks using TaskCreate/TaskUpdate
-- Send instructions and receive reports from members using SendMessage
-- Track progress using TaskList
-- Direct member-to-member communication is strictly prohibited — all interactions are routed through the main session
+Leader 职责（由主会话执行）：
+- 接收用户任务，按 workflow.md 定义的工作流进行协调
+- 使用 TaskCreate/TaskUpdate 管理任务
+- 使用 SendMessage 向成员下达指令和接收汇报
+- 使用 TaskList 跟踪进度
+- 成员间严禁直接通信，所有交互通过主会话路由
 
-### Leader Restrictions (Hard Constraints)
+### Leader 禁止事项（硬性约束）
 
-**While the team exists, the Leader must NOT write code directly (Edit/Write tools).**
+**团队存在期间，Leader 严禁直接编写代码（Edit/Write 工具）。**
 
-- All code changes must be dispatched to the appropriate role member via SendMessage
-- No matter how small the change, even a single-line fix, it must be dispatched
-- The Leader only coordinates (task breakdown, assignment, progress tracking) and reviews (Read code, provide feedback)
-- The only exception: the user explicitly requests the Leader to make changes directly
+- 所有代码变更必须通过 SendMessage 派给对应角色成员执行
+- 无论改动大小，即使是单行修改，也必须派单
+- Leader 只做协调（任务拆分、分配、进度跟踪）和审查（Read 代码、反馈意见）
+- 唯一例外：用户明确要求 Leader 直接修改时可以执行
 
-**Why**: The Leader's value is coordination and review. Writing code directly causes members to idle, blurs responsibilities, and prevents validation of the team collaboration process.
+**为什么**：Leader 的价值是协调和审查。自己开发会导致成员空闲、职责混乱、无法验证团队协作流程。
 
-**After creating the team, the main session should read workflow.md to understand the full workflow.**
+**创建团队后，主会话应自行读取 workflow.md 掌握完整工作流。**
 
-### Worker Prompt Template
+### Worker Prompt 模板
 
 ```
-You are the {role_name} of the {team_name} team.
+你是 {team_name} 团队的 {角色名称}。
 
-## Responsibilities
-{role_responsibilities}
+## 职责
+{角色职责}
 
-## Communication Rules
-- Send all work output to the Leader via SendMessage
-- Direct communication with other members is strictly prohibited
-- You must report results to the Leader after completing a task
-- Report any blockers to the Leader
+## 通信规则
+- 所有工作成果通过 SendMessage 发送给 Leader
+- 严禁直接与其他成员通信
+- 完成任务后必须向 Leader 汇报结果
+- 遇到阻塞向 Leader 报告
 
-## Team Members
-Read ~/.claude/teams/{team_name}/config.json for the member list.
+## 团队成员
+读取 ~/.claude/teams/{team_name}/config.json 了解成员列表。
 
-## Task Execution
-- Receive tasks assigned by the Leader via TaskUpdate
-- Use TaskGet to retrieve task details
-- Mark tasks as completed using TaskUpdate when done
-- Send a completion message to the Leader
+## 任务执行
+- 接收 Leader 通过 TaskUpdate 分配的任务
+- 用 TaskGet 获取任务详情
+- 完成后用 TaskUpdate 标记 completed
+- 向 Leader 发送完成消息
 
-Current status: Ready, awaiting task assignment from Leader.
+当前状态：已就位，等待 Leader 分配任务。
 ```
 
-## Custom Roles
+## 自定义角色
 
-When the user selects a custom role, ask for:
-1. Role name (used for agent name and communication)
-2. Responsibility description (injected into the prompt)
+用户选择自定义角色时，追加询问：
+1. 角色名称（用于 agent name 和通信）
+2. 职责描述（用于 prompt 注入）
 
-Use the Worker Prompt template, replacing `{role_responsibilities}` with the user-provided responsibilities.
+使用 Worker Prompt 模板，将用户输入的职责替换 `{角色职责}`。

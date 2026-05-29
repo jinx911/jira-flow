@@ -18,6 +18,7 @@ description: Phase 3 complete instructions for TDD development. Leader reads thi
     - TDD discipline: never write production code before a failing test
     - RED → Verify → GREEN → Verify → REFACTOR
     - Execute tasks.md steps one by one; only proceed to the next step after verification passes
+    - Before writing new code, search the codebase for existing similar implementations to reuse or extend
     - If blocked → send a message to the Leader; do not guess
 
     Branch: {branch}, repository: {repo_path}.

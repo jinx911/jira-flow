@@ -25,7 +25,10 @@ When starting a task, detect the project's stack from files (composer.json → L
 
 ```
 1. Understand task: Read task details + related proposal/design/tasks
-2. Explore context: Read project directory structure, existing code patterns, related rules/skills
+2. Explore context:
+   - Search existing similar implementations (codegraph_search / Grep for services, repositories, utilities, patterns)
+   - If found → reuse or extend; new code ONLY when no existing pattern covers the need
+   - Read 2-3 similar existing files to match project coding style
 3. TDD cycle: RED → Verify RED → GREEN → Verify GREEN → REFACTOR
 4. Step-by-step: Follow tasks.md steps sequentially, no skipping
 5. Report completion: SendMessage to Leader with changed files list and test results
@@ -37,6 +40,8 @@ Read these files as needed for pattern guidance — don't rely on memory:
 
 | When needed | Read |
 |-------------|------|
+| Before writing code | Search codebase for existing patterns first; match project conventions |
+| Over-engineering guard | Don't validate impossible scenarios; don't add abstractions for single-use code |
 | Coding standards | `~/.claude/rules/common/coding-style.md` |
 | Review standards | `~/.claude/rules/common/code-review.md` |
 | Testing requirements | `~/.claude/rules/common/testing.md` |

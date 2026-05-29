@@ -1,96 +1,96 @@
-# Hub-and-Spoke Team Collaboration Workflow
+# Hub-and-Spoke 团队协作工作流
 
-## Architecture
-
-```
-User
-  |
-  v
-Leader (sole hub, does not do work, only routes)
-  |     |     |     |
-  v     v     v     v
-Req    FE    BE    QA
-Analyst Dev   Dev   Test
-```
-
-## Communication Rules
-
-1. **All interactions must go through the Leader** — direct member-to-member communication is prohibited
-2. **The Leader does not do hands-on work** — only judges, routes, and consolidates
-3. **After each node completes, the Leader decides the next step**: continue / pause for human confirmation / rework
-
-## Full Task Lifecycle
+## 架构
 
 ```
-Phase 1: Requirements
-  User assigns task → Leader
-  Leader determines if requirements analysis is needed:
-    |- Yes → Forward to Requirements Analyst → Analysis complete, return to Leader
-    +- No  → Proceed directly to next phase
-  Leader consolidates analysis results → Determine if human confirmation is needed:
-    |- Yes → Ask user to confirm/adjust → Continue after user feedback
-    +- No  → Continue
-
-Phase 2: Development
-  Leader breaks down development tasks → Assign to FE/BE (can be parallel)
-  Development complete → Return to Leader
-
-Phase 3: Code Review
-  Leader determines if review is needed:
-    |- Yes → Forward to Review role → Review results return to Leader
-    |        |- Approved → Continue
-    |        +- Issues found → Leader sends back to developer for fix → Return to Phase 3
-    +- No  → Continue
-
-Phase 4: Testing
-  Leader determines if testing is needed:
-    |- Yes → Forward to QA → Test results return to Leader
-    |        |- Passed → Continue
-    |        +- Bugs found → Enter Bug Fix Loop
-    +- No  → Continue
-
-Phase 5: Report
-  Leader generates final report → Report to user
-
-Phase 6: Confirmation
-  User confirms → Done / Rework
+用户
+  │
+  ▼
+Leader（唯一中枢，不干活，只路由）
+  │     │     │     │
+  ▼     ▼     ▼     ▼
+需求    前端   后端   QA
+分析    开发   开发   测试
 ```
 
-## Bug Fix Loop
+## 通信规则
+
+1. **所有交互必须通过 Leader** — 成员间严禁直接通信
+2. **Leader 不做具体工作** — 只做判断、路由、汇总
+3. **每个节点完成后 Leader 决定下一步**：继续 / 暂停等人工确认 / 返工
+
+## 任务完整生命周期
 
 ```
-QA reports bug → Leader
-  → Leader assigns bug to responsible developer (FE bug → FE dev, BE bug → BE dev)
-    → Developer fixes → Returns to Leader
-      → Leader forwards back to QA for retest
-        |- Passed → Exit loop
-        +- Still buggy → Repeat this loop
+阶段 1: 需求
+  用户下发任务 → Leader
+  Leader 判断是否需要需求分析：
+    ├─ 是 → 转发需求分析师 → 分析完成返回 Leader
+    └─ 否 → 直接进入下一阶段
+  Leader 汇总分析结果 → 判断是否需要人工确认：
+    ├─ 是 → 询问用户确认/调整 → 用户反馈后继续
+    └─ 否 → 继续
+
+阶段 2: 开发
+  Leader 拆解开发任务 → 分配给前端/后端（可并行）
+  开发完成 → 返回 Leader
+
+阶段 3: Code Review
+  Leader 判断是否需要 Review：
+    ├─ 是 → 转发 Review 角色 → Review 结果返回 Leader
+    │       ├─ 通过 → 继续
+    │       └─ 有问题 → Leader 转回对应开发修复 → 回到阶段 3
+    └─ 否 → 继续
+
+阶段 4: 测试
+  Leader 判断是否需要测试：
+    ├─ 是 → 转发 QA → 测试结果返回 Leader
+    │       ├─ 通过 → 继续
+    │       └─ 有 Bug → 进入 Bug 修复循环
+    └─ 否 → 继续
+
+阶段 5: 汇报
+  Leader 生成最终报告 → 向用户汇报
+
+阶段 6: 确认
+  用户确认 → 完成 / 返工
 ```
 
-### Bug Loop Rules
+## Bug 修复循环
 
-- After a fix, QA must retest — no skipping
-- The Leader tracks bug count per round; the trend should decrease
-- **Still unfixed after 3 rounds** → Leader pauses the loop and reports the situation to the user
+```
+QA 报告 Bug → Leader
+  → Leader 按责任分发 Bug 给对应开发（前端 Bug → 前端，后端 Bug → 后端）
+    → 开发修复 → 返回 Leader
+      → Leader 再转发 QA 复测
+        ├─ 通过 → 退出循环
+        └─ 仍有 Bug → 重复此循环
+```
 
-## Final Report Format
+### Bug 循环规则
 
-The Leader consolidates and generates a report containing:
+- 修复后必须回到 QA 复测，不能跳过
+- Leader 记录每轮 Bug 数量，趋势应递减
+- **超过 3 轮仍未修复** → Leader 暂停循环，向用户报告情况
 
-1. **Requirements Analysis Summary** — key requirements, breakdown results
-2. **Development Change Log** — what FE/BE each delivered
-3. **Code Review Conclusion** — approved / issues / fix records
-4. **Test Results** — test case count, pass rate, bug records
-5. **Bug Fix Log** — bug count per round, fix details
-6. **Final Status** — Complete / Partially Complete / Needs Rework
+## 最终报告格式
 
-## Leader Decision Guide
+Leader 汇总生成报告，包含：
 
-| Scenario | Decision |
-|----------|----------|
-| Requirements are ambiguous | Must run requirements analysis first; do not assign development directly |
-| Task involves both FE and BE | Split into independent tasks, assign in parallel |
-| Review finds issues | Send back to original developer for fix, re-review after fix |
-| Testing finds bugs | Assign by responsibility, QA retests after fix |
-| Bugs persist after 3 rounds | Pause and report to user |
-| Task complete | Generate report, wait for user confirmation |
+1. **需求分析摘要** — 核心需求点、拆解结果
+2. **开发变更清单** — 前端/后端各做了什么
+3. **Code Review 结论** — 通过/问题/修复记录
+4. **测试结果** — 测试用例数、通过率、Bug 记录
+5. **Bug 修复记录** — 每轮 Bug 数量、修复详情
+6. **最终状态** — 完成 / 部分完成 / 需返工
+
+## Leader 决策指南
+
+| 场景 | 决策 |
+|------|------|
+| 需求模糊 | 必须先走需求分析，不直接分配开发 |
+| 任务涉及前后端 | 拆分为独立任务，并行分配 |
+| Review 发现问题 | 转回原开发修复，修复后重新 Review |
+| 测试发现 Bug | 按责任分配，修复后 QA 复测 |
+| Bug 超 3 轮未修 | 暂停，向用户报告 |
+| 任务完成 | 生成报告，等用户确认 |

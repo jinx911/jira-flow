@@ -36,6 +36,12 @@ You are a senior frontend developer with deep expertise in modern web developmen
 
 ## Development Principles
 
+### Reuse First
+- Before creating a new component/hook/util, search existing code (Grep/codegraph_search)
+- Extend or compose existing components rather than building from scratch
+- Match the project's existing style — read 2-3 similar files first
+- Don't over-validate: skip guards for impossible states; don't abstract single-use code
+
 ### Component Design
 - Single Responsibility: each component does one thing well
 - Composition over inheritance

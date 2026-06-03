@@ -1,7 +1,7 @@
 ---
 partOf: jira-flow
-version: 1.0.0
-description: Breakpoint recovery logic. When jira-flow detects a state.json file, follow this procedure to resume the interrupted workflow.
+version: 1.1.0
+description: Breakpoint recovery logic and unified retry limits. When jira-flow detects a state.json file, follow this procedure to resume the interrupted workflow.
 ---
 
 # Breakpoint Recovery
@@ -45,25 +45,53 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
       "last_update": "2026-05-22T10:30:00Z"
     }
   },
+  "agent_heartbeats": {
+    "backend-dev": {
+      "last_heartbeat": "2026-05-22T10:30:00Z",
+      "status": "working"
+    }
+  },
+  "failed_agents": [],
   "updated_at": "<ISO>"
 }
 ```
 
-### New Fields
+### Field Reference
 
 | Field | Purpose | Updated When |
 |-------|---------|-------------|
 | `phase_decisions` | Key decisions per phase (≤100 chars/field) | After each Gate passes |
 | `agent_context_snapshots` | Last known progress per agent | On every agent progress report / completion |
-| `phase1_substep` | Phase 1 internal step tracking ("step1"\|"step2"\|"step3"\|"step4"\|"gate1") | After each Phase 1 step completes |
-| `user_answers` | User responses from Phase 1 Checkpoint A and B | After each checkpoint interaction |
+| `agent_heartbeats` | Agent health status (working/idle/blocked/unknown) | On every progress update from agent |
+| `phase1_substep` | Phase 1 internal step tracking | After each Phase 1 step completes |
+| `user_answers` | User responses from Phase 1 Checkpoints | After each checkpoint interaction |
+| `failed_agents` | List of agents that failed to spawn or recover | On spawn failure or exhaustion |
 
 ### Persistence Timing
 
 - **Gate passes**: Leader writes `gate_summaries` + `phase_decisions` + advances `current_phase`
-- **Agent progress report received**: Leader updates `agent_context_snapshots[agent_name]`
-- **Agent task completes**: Leader updates corresponding snapshot
+- **Agent progress report received**: Leader updates `agent_context_snapshots[agent_name]` + `agent_heartbeats[agent_name]`
+- **Agent task completes**: Leader updates corresponding snapshot + heartbeat status to `idle`
 - **Phase 3 — each task completed**: Leader updates snapshot for the dev agent
+
+---
+
+## Unified Retry Limits
+
+| Exception Type | Self-Repair Attempts | Action When Exceeded |
+|----------------|---------------------|----------------------|
+| Build failure | Dev self-fixes ≤2 times | Leader asks user |
+| Test bug fix | tester→dev loop ≤3 times | Leader asks user |
+| Requirements/design issue | Revise and re-Gate ≤2 times | Leader asks user whether to abort |
+| Task conflict | Planner re-sequences ≤1 time | Leader decides serialization or worktree |
+| Agent unresponsive | Resend message 1 time | Leader asks user (three-level detection) |
+| Agent context exhausted | Spawn replacement ≤1 time | Leader asks user |
+| MCP connection failure | Retry ≤2 times | Save state, prompt user to resume after recovery |
+| Message unconfirmed | Member retries 1 time | Leader checks and replies |
+
+Any exception exceeding its limit → Leader must escalate to the user; do not continue retrying automatically.
+
+---
 
 ## Recovery Procedure
 
@@ -97,7 +125,7 @@ After Phase 6 completes, the state file is deleted.
 ### Agent Spawn Failure
 
 ```
-Spawning a specific agent fails → Leader records the failed agent name in state.failed_agents
+Spawning a specific agent fails → Leader records in state.failed_agents
 → Retry spawn (up to 2 times)
 → Still failing → AskUserQuestion: continue without that role / abort the workflow
 ```

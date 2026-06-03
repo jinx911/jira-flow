@@ -1,6 +1,6 @@
 ---
 partOf: jira-flow
-version: 1.0.0
+version: 1.1.0
 description: Phase 3 complete instructions for TDD development. Leader reads this file when entering Phase 3.
 ---
 
@@ -27,10 +27,30 @@ description: Phase 3 complete instructions for TDD development. Leader reads thi
     If multiple development agents need to modify the same repository → use worktree isolation.
     If issues arise, follow the escalation path defined in team-rules.md."
 3. Leader monitors:
-   - On progress update → update state.json agent_context_snapshots[agent_name]
+   - On progress update → update state.json agent_context_snapshots[agent_name] + agent_heartbeats[agent_name]
    - On completion report → TaskUpdate + notify waiting agents
    - On exception → handle per exception protocol
-   - On no message for 10 min → ping agent; on ping unanswered + 15 min silence → context exhaustion recovery (see skill.md)
+   - On no message for 15 min → follow three-level health detection (see skill.md)
+   - On Context Warning → save snapshot, arrange wrap-up, prepare replacement
+
+## Long Task Context Protection
+
+When tasks.md has **more than 8 steps**, the Leader MUST split the work into rounds to prevent agent context exhaustion:
+
+| Step Count | Strategy |
+|-----------|----------|
+| ≤8 steps | Single agent instance, standard flow |
+| 9-16 steps | 2 rounds: assign ≤8 steps per round |
+| >16 steps | 3+ rounds: assign ≤6 steps per round |
+
+**Round execution:**
+1. Leader assigns ≤8 steps from tasks.md to the dev agent
+2. Agent completes steps, sends Completion Report for the round
+3. Leader saves progress to state.json → agent_context_snapshots
+4. Leader sends next round assignment to the same agent (or spawns replacement if context warning received)
+5. Next round prompt includes: "Round {N}/{total}. Previous round completed steps {X}-{Y}. Continue from step {Z}."
+
+**Why**: Each TDD cycle (RED→GREEN→REFACTOR) consumes significant context. Limiting to ≤8 steps per round keeps agent context healthy and eliminates most context exhaustion scenarios.
 
 ## Frontend-Backend Parallel Conflict Coordination
 

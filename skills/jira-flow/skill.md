@@ -1,7 +1,7 @@
 ---
 name: jira-flow
 description: Use when user provides a Jira issue key or URL and wants to execute the full development lifecycle — requirement analysis, design, planning, branch creation, TDD development, code review, and commit. Creates a full-lifecycle agent team for end-to-end coordination with context isolation.
-version: 1.0.0
+version: 1.1.0
 tags: [jira, workflow, team, tdd, code-review, agent-orchestration]
 dependencies:
   skills:
@@ -43,10 +43,23 @@ dependencies:
 **Forbidden**: Write (business code), Edit, Bash, /git-ops, Atlassian MCP write operations
 **Forbidden to hold**: Source code, diffs, full design content, Jira descriptions, teammate execution logs
 
+### Leader Context Budget
+
+The Leader holds only at any given time:
+- state.json key summary (current_phase + phase_decisions + latest 1 gate_summary)
+- Current Phase brief only (other Phase briefs are released after use)
+- Latest message from each member (older messages: extract key points → write to state.json → discard)
+
+Enforcement rules:
+1. Phase briefs are released after the Phase transitions (not retained)
+2. Gate summaries: retain only current + previous Phase (older ones stay in state.json)
+3. Member reports: extract key info → persist to state.json → discard original message
+4. Long phases (Phase 3+): execute `/compact` after every 3 progress updates received
+5. Every Gate pass: execute `/compact` (existing mechanism preserved)
+
 ## Superpowers Integration
 
-> Each Phase references superpowers methodologies. The Leader annotates delegate instructions with `[superpowers:xxx]`.
-> Agents receiving these should first Read the corresponding SKILL.md to get the full methodology.
+Each Phase brief contains `[superpowers:xxx]` markers. Agents Read the corresponding SKILL.md themselves — the Leader does not need to know the details.
 
 | Phase | Superpowers Skill |
 |-------|------------------|
@@ -56,148 +69,57 @@ dependencies:
 | 4 Code Review | requesting-code-review |
 | 5 Test Verification | verification-before-completion |
 | 6 Finalization | finishing-a-development-branch |
-| Exception Handling | systematic-debugging |
 
 ## Run Modes
 
 | Behavior | Semi-Auto (default) | Full-Auto |
 |----------|---------------------|-----------|
-| Gate | Display summary + AskUserQuestion for confirmation | Auto-pass, log summary without interrupting |
-| Phase 1 Checkpoints | **Interactive** — Checkpoint A/B require user input, C conditional | Auto-pass all checkpoints, use recommended options |
-| Exceptions | All exceptions prompt the user | Only prompt when retry limit is exceeded |
-| Jira Finalization | Display testing notes for user confirmation before submitting | Auto-submit |
-| Branch Operations | Display branch info for confirmation before executing | Auto-execute |
+| Gate | Display summary + AskUserQuestion | Auto-pass, log summary |
+| Phase 1 Checkpoints | Interactive — A/B require input, C conditional | Auto-pass all |
+| Exceptions | All prompt user | Only retry-exceeded prompt user |
+| Jira/Branch | Confirm before executing | Auto-execute |
 
-In full-auto mode, the Leader still logs Gate summaries (for post-hoc review) but skips interactive confirmation. Exceptions and limit-exceeded scenarios must always be escalated to the user.
+## Configuration
 
-## File Structure
+Config lookup: `~/.claude/skills/jira-flow/project-config.md` → `root_path` → `~/.claude/configs/projects.json` → `{root_path}/.claude/project-config.md`
 
-```
-~/.claude/skills/jira-flow/
-├── skill.md                    ← This file (flow skeleton)
-├── gate.md                     ← Gate mechanism + pass criteria + summary format
-├── phases/                     ← Phase instructions (loaded on demand)
-│   ├── phase-1-brief.md
-│   ├── phase-2-brief.md
-│   ├── phase-3-brief.md
-│   ├── phase-4-brief.md
-│   ├── phase-5-brief.md
-│   └── phase-6-brief.md
-├── project-config.md           ← jira-flow process configuration
-├── project-config.example.md   ← Project config example
-├── team-rules.md               ← Communication rules + project context
-└── resume.md                   ← Breakpoint recovery logic
-
-~/.claude/configs/
-└── projects.json               ← Global index (project path → name mapping)
-
-<project-root>/.claude/
-├── project-config.md           ← Full project config (repos, databases, test environments, etc.)
-└── settings.local.json         ← Project permission whitelist
-```
-
-## Configuration Architecture
-
-```
-Lookup chain: jira-flow/project-config.md → root_path → projects.json → {root_path}/.claude/project-config.md
-
-Global index (~/.claude/configs/projects.json)
-  └── Project path → project name mapping (maintained by /init-jira-flow)
-
-Project config (<project-root>/.claude/project-config.md)
-  └── Full project info: tech stack, repos, databases, test environments, build commands, etc.
-  └── Contains sensitive info — should be added to .gitignore
-
-jira-flow process config (~/.claude/skills/jira-flow/project-config.md)
-  └── Only jira-flow workflow settings: root_path, cloudId, branch naming, OpenSpec paths
-```
-
----
+File structure and detailed docs: see `README.md`.
 
 ## Initialization
 
 ### 0. Pre-flight Checks
 
-Verify the following dependencies are ready. Summarize any missing items and prompt the user to install/configure — do not auto-install:
-
-1. Required skills: `create-team`, `delete-team`, `git-ops` exist in `~/.claude/skills/`
-2. Superpowers plugin installed (≥5.0.0)
-3. Agent definitions exist in `~/.claude/agents/`:
-   - requirements-analyst, architect, planner (core team)
-   - backend-developer, frontend-developer (dev team)
-   - code-reviewer, tester (review/test team)
-4. Atlassian-rovo MCP is available (try `mcp__atlassian-rovo__atlassianUserInfo`)
-5. Pending cleanup: empty directories under `{changes_path}`. Delegate to the first Bash-capable agent (backend-developer / frontend-developer) spawned after Gate 1 to run `find {changes_path} -type d -empty -delete`. Non-blocking — cleanup failure does not affect the flow.
-6. CodeGraph: check if `.codegraph/` exists in `{root_path}`:
-   - Exists → agents will automatically use CodeGraph tools for code exploration (configured via team-rules.md)
-   - Does not exist → AskUserQuestion: "CodeGraph is not initialized for this project. Initialize it for faster code understanding? (codegraph init -i)"
-   - User declines → proceed without CodeGraph; agents use standard grep/glob/Read
-→ All ready → continue
+Verify dependencies. Summarize missing items and prompt — do not auto-install:
+1. Skills: `create-team`, `delete-team`, `git-ops` in `~/.claude/skills/`; Superpowers plugin ≥5.0.0
+2. Agent definitions in `~/.claude/agents/` (see dependencies.agents)
+3. Atlassian-rovo MCP available; CodeGraph: check `.codegraph/` in `{root_path}` — missing → AskUserQuestion
+4. Pending cleanup: empty dirs under `{changes_path}` → delegate to first Bash-capable agent
 
 ### 1. Parse + Configure
 
-1. Extract Jira issue key from `$ARGUMENTS`
-2. Read `jira-flow/project-config.md` → get `root_path`
-   - `root_path` is non-empty → use it
-   - `root_path` is empty → read `~/.claude/configs/projects.json`:
-     - Only 1 project → auto-select
-     - Multiple projects → AskUserQuestion for user to choose
-     - No projects → prompt user to run `/init-jira-flow` first
-3. Read `~/.claude/configs/projects.json` → match by `root_path` → get project name
-4. Read `{root_path}/.claude/project-config.md` → get full project config
-   - Exists: use it
-   - Does not exist: prompt user to run `/init-jira-flow` to initialize project config
-5. `cloudId` is empty → Leader calls `mcp__atlassian-rovo__getAccessibleAtlassianResources` to obtain it
-6. Breakpoint detection: check `{root_path}/.jira-flow/{issue_key}-state.json`
-   - Exists: read `resume.md` and execute breakpoint recovery
-   - Does not exist: continue
-7. `AskUserQuestion`: semi-auto (recommended) / full-auto
+1. Extract issue key from `$ARGUMENTS`
+2. Read `project-config.md` → resolve `root_path` (empty → read `projects.json`, multiple → AskUserQuestion)
+3. Read `{root_path}/.claude/project-config.md` → full project config
+4. `cloudId` empty → call `getAccessibleAtlassianResources`
+5. Breakpoint: check `{root_path}/.jira-flow/{issue_key}-state.json` → exists → read `resume.md`
+6. AskUserQuestion: semi-auto (recommended) / full-auto
 
-### 1.5 Phase Variable Substitution
+### 1.5 Variable Substitution
 
-When the Leader enters each Phase, it Reads phase-N-brief.md. Any `{variable}` placeholders are substituted before constructing the delegate message:
+Read phase-N-brief.md and substitute `{variable}` placeholders. Full table: `team-rules.md → Variable Injection Mechanism`.
 
-| Variable | Source | Description |
-|----------|--------|-------------|
-| `{issue_key}` | Input parameter | Jira issue key, e.g. OA-3650 |
-| `{key}` | = `{issue_key}` | Alias used in phase briefs |
-| `{changes_path}` | jira-flow/project-config.md → openspec.changes_path | Work output directory (relative to root_path) |
-| `{baseline_path}` | jira-flow/project-config.md → openspec.baseline_path | System baseline directory (optional) |
-| `{spec_name}` | Phase 1 output | Proposal directory name, determined by requirements-analyst |
-| `{branch}` | Phase 2 output | Development branch name |
-| `{repo_path}` | project-config.md → backend.main_repo | Backend repository path |
-| `{backend_repo_path}` | = `{repo_path}` | Alias used in Phase 4 |
-| `{frontend_repo_path}` | project-config.md → frontend.repo_path | Frontend repository path |
-| `{repo_paths}` | All repo paths combined | backend + frontend + involved modules |
-| `{root_path}` | jira-flow/project-config.md → root_path | Project root directory (resolved in Phase 0) |
-| `{deploy_branch}` | project-config.md → deploy_branch | Deploy branch (optional, used in Phase 6) |
+Key variables: `{issue_key}`, `{root_path}`, `{changes_path}`, `{spec_name}` (Phase 1), `{branch}` (Phase 2), `{repo_path}`, `{repo_paths}`.
 
-**Config reference convention**: In phase briefs, "refer to project-config.md → xxx" always means `{root_path}/.claude/project-config.md` (project config), not `~/.claude/skills/jira-flow/project-config.md` (process config).
+> "project-config.md → xxx" always means `{root_path}/.claude/project-config.md`.
 
 ### 2. Create Core Team
 
-Invoke `/create-team` in programmatic mode, passing the following JSON:
+Invoke `/create-team` in programmatic mode with `team_name: "jira-flow-{issue_key}"`, roles from dependencies.agents, and `custom_prompt` = team-rules.md with variables substituted. Scale on demand using Agent spawn.
 
-```json
-{
-  "team_name": "jira-flow-{issue_key}",
-  "roles": [
-    {"name": "requirements-analyst", "agent": "requirements-analyst"},
-    {"name": "architect", "agent": "architect"},
-    {"name": "planner", "agent": "planner"}
-  ],
-  "custom_prompt": "<team-rules.md contents with variables substituted>"
-}
-```
-
-custom_prompt generation: Read team-rules.md → substitute template variables (see team-rules.md variable injection instructions) → pass as custom_prompt.
-
-Scale on demand (after Gate 1 / before Phase 4 / before Phase 5) using Agent spawn, appending team-rules.md as a prompt parameter for each spawn.
-
-| Timing | Roles Created | Decision Criteria |
-|--------|--------------|-------------------|
+| Timing | Roles | Decision Criteria |
+|--------|-------|-------------------|
 | Phase 0 | requirements-analyst, architect, planner | Fixed core team |
-| After Gate 1 | backend-dev / frontend-dev | Whether design.md involves backend/frontend |
+| After Gate 1 | backend-dev / frontend-dev | design.md involves backend/frontend |
 | Before Phase 4 | code-reviewer | Fixed addition |
 | Before Phase 5 | tester | Fixed addition |
 
@@ -205,13 +127,12 @@ Scale on demand (after Gate 1 / before Phase 4 / before Phase 5) using Agent spa
 
 ## Phase Summary
 
-> When entering a Phase, Read `phases/phase-N-brief.md` for full instructions.
-> When executing a Gate, Read `gate.md` for pass criteria and summary format.
+> When entering a Phase, Read `phases/phase-N-brief.md`. When executing a Gate, Read `gate.md`.
 
 | Phase | Output | Gate |
 |-------|--------|------|
 | 1 Requirements Analysis (Interactive) | proposal.md + design.md (4 steps + Checkpoint A/B/C) | Confirm → spawn dev agents |
-| 2 Task Planning + Branch | tasks.md + git branch | Confirm task list + branch info |
+| 2 Task Planning + Branch | tasks.md + git branch | Confirm task list + branch |
 | 3 TDD Development | Implementation code | Confirm progress |
 | 4 Code Review | Review report | CRITICAL/HIGH → fix |
 | 5 Test Verification | Test report | Confirm tests pass |
@@ -223,57 +144,47 @@ Scale on demand (after Gate 1 / before Phase 4 / before Phase 5) using Agent spa
 
 All exceptions flow: teammate → Leader → Leader evaluates → Leader forwards to the appropriate role.
 
-### Unified Retry Limits
+### Agent Health Detection (Three-Level)
 
-| Exception Type | Self-Repair Attempts | Action When Exceeded |
-|----------------|---------------------|----------------------|
-| Build failure | Dev self-fixes ≤2 times | Leader asks user |
-| Test bug fix | tester→dev loop ≤3 times | Leader asks user |
-| Requirements/design issue | Revise and re-Gate ≤2 times | Leader asks user whether to abort |
-| Task conflict | Planner re-sequences ≤1 time | Leader decides serialization or worktree |
-| Agent unresponsive | Resend message 1 time | Leader asks user |
-| Agent context exhausted | Spawn replacement agent ≤1 time | Leader asks user |
-| MCP connection failure | Retry ≤2 times | Save state, prompt user to resume after recovery |
+Replaces the old ping + 15min auto-judgment logic with a progressive three-level approach:
 
-Any exception exceeding its limit → Leader must escalate to the user; do not continue retrying automatically.
+| Level | Trigger | Leader Action |
+|-------|---------|---------------|
+| **Level 1** (10/15min) | Phase 1-2: 10min; Phase 3-5: 15min no reply | Send ping message, wait 5 minutes |
+| **Level 2** (15/20min) | Ping unanswered + last message exceeds threshold | **AskUserQuestion to user** (wait/skip/terminate) — NOT auto-judged |
+| **Level 3** (25/30min) | User confirms agent is unresponsive | Execute context exhaustion recovery |
 
-### Waiting and Timeouts
+> **Key change**: The Leader never auto-judges context exhaustion. Level 2 always requires a user decision.
 
-Leader behavior while waiting for agent replies:
-- **Normal wait**: While an agent is executing a task, the Leader stands by (no hard timeout)
-- **No-response detection (Level 1)**: If an agent does not reply within the expected timeframe (Phase 1-2: 5 minutes; Phase 3-5: 10 minutes), the Leader sends a ping message
-- **Context exhaustion detection (Level 2)**: If ping is unanswered AND the agent's last message or progress report was >15 minutes ago → 判定 context_exhausted
-- **Ping unanswered (Level 1 only)**: Leader uses AskUserQuestion to ask user: wait / skip / terminate
-- **Agent proactively reports blocking**: Not a timeout — handle via the normal exception path
+### Agent Context Exhaustion Recovery
 
-### Context Exhaustion Recovery
-
-When the Leader detects context_exhausted for an agent:
+When user confirms an agent is unresponsive:
 
 1. Read state.json → get agent's task assignments and context snapshot
-2. Spawn a replacement agent (same role + team-rules.md), injecting:
-   - Original task description (from the corresponding phase-N-brief.md)
+2. Spawn replacement agent (same role + team-rules.md), injecting:
+   - Original task description (from phase-N-brief.md)
    - Phase decisions: state.json → phase_decisions[current_phase]
-   - Agent's last context snapshot: state.json → agent_context_snapshots[<agent_name>]
+   - Agent's last context snapshot
    - Instruction: "Previous agent ran out of context. Continue from where it left off. Do NOT restart completed work."
-3. Update state.json:
-   - Replace the exhausted agent in spawned_agents
-   - Reset agent_context_snapshots[<agent_name>]
-4. New agent continues without restarting
-5. If replacement also exhausts context → escalate to user (do not spawn a third agent)
+3. Update state.json → replace exhausted agent + reset snapshot
+4. If replacement also exhausts context → escalate to user (no third spawn)
 
-### Leader Context Protection
+### Message Confirmation Protocol
 
-After each Gate passes:
-1. Persist Gate summary to state.json (see gate.md for procedure)
-2. Execute `/compact` to compress the Leader's own context
-3. If `/compact` causes loss of recent context → read state.json to restore phase_decisions and gate_summaries
+Prevents message loss between members and Leader:
+
+1. Leader must reply with brief acknowledgment after receiving any member message: `"Acknowledged, {summary}"`
+2. If member sends a message and receives **no acknowledgment within 2 minutes** → resend once, marking the message `[RETRY]`
+3. Leader must prioritize any message with `[RETRY]` marker
+4. If resend also receives no acknowledgment → member marks message `[URGENT-NOACK]`, Leader saves progress to state.json immediately upon receipt
 
 ### Exception Routing
 
 - Requirements/design issues → requirements-analyst/architect → may trigger planner re-sequencing
 - Build failure → dev self-fixes (≤2 times) → still failing → Leader asks user
 - Task conflict → planner reports → Leader decides serialization or worktree
-- Test bug → tester → Leader → dev fixes → tester re-verifies
-  - When dev fixes bugs, follow [superpowers:systematic-debugging]: write reproduction test first → identify root cause → minimal fix → verify
-- MCP failure → handle per "MCP connection lost" scenario in resume.md
+- Test bug → tester → Leader → dev fixes → tester re-verifies (≤3 loops)
+- MCP failure → retry ≤2 times → save state, prompt user to resume
+- **Message unconfirmed** → member retries 1 time → Leader checks and replies
+
+> Full retry limits table see `resume.md → Unified Retry Limits`.

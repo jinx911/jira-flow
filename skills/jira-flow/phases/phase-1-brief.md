@@ -10,21 +10,23 @@ description: Phase 1 complete instructions for interactive requirements analysis
 
 ## Overview
 
-Phase 1 consists of 4 steps with 3 interaction checkpoints (A/B/C), followed by Gate 1:
+Phase 1 consists of 5 steps with 3 interaction checkpoints (A/B/C), followed by Gate 1:
 
 | Step | Agent | Output | User Interaction |
 |------|-------|--------|------------------|
 | Step 1: Initial Analysis | requirements-analyst | Requirement summary + clarifying questions | **Checkpoint A**: User confirms understanding |
 | Step 2: Options Proposal | requirements-analyst | 2-3 implementation approaches | **Checkpoint B**: User selects approach |
 | Step 3: Generate Proposal | requirements-analyst | proposal.md | None |
+| Step 3b: Quality Check | requirements-analyst | Quality score (80/100 threshold) | None (automatic, borderline → user) |
 | Step 4: Architecture Design | architect | design.md + key design decisions | **Checkpoint C**: User confirms design decisions (conditional) |
 | Gate 1 | Leader | Final confirmation | Gate 1 |
 
 ### State Tracking
 
 After each step, Leader updates `{root_path}/.jira-flow/{issue_key}-state.json`:
-- `phase1_substep`: "step1" | "step2" | "step3" | "step4" | "gate1"
+- `phase1_substep`: "step1" | "step2" | "step3" | "step3b" | "step4" | "gate1"
 - `user_answers`: accumulates user responses from Checkpoint A and B
+- `quality_score`: populated after Step 3b (total, dimensions, passed, attempt)
 
 ---
 
@@ -134,6 +136,60 @@ On completion, send a message containing: spec_name, proposal summary (key point
 Wait for completion → update state: `phase1_substep = "step3"`, record `spec_name`
 
 ---
+
+## Step 3b: Proposal Quality Check
+
+Leader → requirements-analyst: "Score the proposal.md you just generated.
+
+1. Read `~/.claude/skills/jira-flow/phases/quality-rubric.md`
+2. Read `{changes_path}/{spec_name}/proposal.md`
+3. Score each dimension (0/50/100) using the rubric criteria
+4. Calculate weighted total
+5. Generate improvement suggestions for any dimension scoring below 100
+
+Output via SendMessage to Leader:
+  - quality_score: { total_score, passed, dimensions, failures, improvement_suggestions }
+  - Do NOT modify proposal.md yet"
+
+Wait for score report → update state: `phase1_substep = "step3b"`, `quality_score = <score object>`
+
+### Quality Gate Decision
+
+**Score >= 80 AND all dimension minimums met**:
+- Proceed to Step 4
+
+**Score < 80 OR any dimension below minimum**:
+1. Leader delegates to requirements-analyst: "Post a quality score comment to Jira issue {key} using mcp__atlassian-rovo__addCommentToJiraIssue (cloudId: {cloudId}) with the following content:
+
+   ```
+   ## Proposal Quality Score: {total}/100 — REVISION REQUIRED
+
+   | Dimension | Score | Weight | Status |
+   |-----------|-------|--------|--------|
+   | {dimension rows with PASS/FAIL} |
+
+   ### Failing Dimensions
+   {for each failure: **Dimension (Score)**: reason}
+
+   ### Improvement Suggestions
+   {numbered list of actionable suggestions}
+   ```"
+
+2. Leader delegates revision to requirements-analyst: "Revise proposal.md to address: {improvement_suggestions}. Re-score after revision."
+3. Retry limit: max 2 scoring attempts total (1 initial + 1 revision)
+4. After 2 failed attempts: Leader asks user whether to proceed anyway or abort
+
+### Run Mode Behavior
+
+**Semi-auto mode**:
+- Leader displays score breakdown to the user
+- Score >= 80: auto-proceed to Step 4
+- Score 75-79: user decides whether to proceed
+- Score < 75: always block, auto-revise once
+
+**Full-auto mode**:
+- Score >= 80: auto-proceed to Step 4
+- Score < 80: auto-revise once; if revised score >= 75, auto-proceed; else ask user
 
 ## Step 4: Architecture Design
 

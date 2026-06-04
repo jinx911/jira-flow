@@ -52,6 +52,21 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
     }
   },
   "failed_agents": [],
+  "quality_score": {
+    "total_score": 82.5,
+    "passed": true,
+    "attempt": 1,
+    "dimensions": {
+      "completeness": 100,
+      "clarity": 50,
+      "feasibility": 100,
+      "traceability": 50,
+      "impact": 100,
+      "consistency": 100
+    },
+    "failures": [],
+    "improvement_suggestions": []
+  },
   "updated_at": "<ISO>"
 }
 ```
@@ -65,6 +80,7 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
 | `agent_heartbeats` | Agent health status (working/idle/blocked/unknown) | On every progress update from agent |
 | `phase1_substep` | Phase 1 internal step tracking | After each Phase 1 step completes |
 | `user_answers` | User responses from Phase 1 Checkpoints | After each checkpoint interaction |
+| `quality_score` | Phase 1 proposal quality score object | After Step 3b quality check |
 | `failed_agents` | List of agents that failed to spawn or recover | On spawn failure or exhaustion |
 
 ### Persistence Timing
@@ -109,6 +125,7 @@ Any exception exceeding its limit → Leader must escalate to the user; do not c
      phase1_substep not set or "step1" → Step 1 (initial analysis)
      phase1_substep == "step2" → Step 2 (options proposal, re-use user_answers.checkpoint_a)
      phase1_substep == "step3" → Step 3 (generate proposal, re-use user_answers.checkpoint_b)
+     phase1_substep == "step3b" → Step 3b (quality check passed, proceed to Step 4)
      phase1_substep == "step4" → Step 4 (architecture design)
      phase1_substep == "gate1" → Gate 1
    current_phase == 2: tasks.md exists → Phase 3, otherwise → Phase 2

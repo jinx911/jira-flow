@@ -128,6 +128,7 @@ Invoke `/create-team` in programmatic mode with `team_name: "jira-flow-{issue_ke
 ## Phase Summary
 
 > When entering a Phase, Read `phases/phase-N-brief.md`. When executing a Gate, Read `gate.md`.
+> **Universal rule for all Phases**: on every agent progress report or completion, Leader updates both `agent_context_snapshots[agent_name]` and `agent_heartbeats[agent_name]` in state.json.
 
 | Phase | Output | Gate |
 |-------|--------|------|

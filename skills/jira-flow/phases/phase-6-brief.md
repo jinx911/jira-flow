@@ -1,6 +1,6 @@
 ---
 partOf: jira-flow
-version: 1.0.1
+version: 1.1.0
 description: Phase 6 complete instructions for wrap-up. Leader reads this file when entering Phase 6.
 ---
 
@@ -18,7 +18,7 @@ Leader → **backend-developer**: "Finalize the development branch:
 
 If deploy_branch is configured in project-config:
 Leader → **backend-developer**: "Merge the development branch into {deploy_branch} and push"
-- checkout {deploy_branch} → pull → merge {development branch} → push → checkout {development branch}
+- checkout {deploy_branch} → pull → merge {branch} → push → checkout {branch}
 - Purpose: trigger automatic deployment to the test environment
 
 If deploy_branch is not configured → skip this step
@@ -27,7 +27,7 @@ If deploy_branch is not configured → skip this step
 
 - All repository branches have been pushed
 - deploy_branch has been merged (if configured)
-- Update jira-flow-state.json
+- Update {root_path}/.jira-flow/{issue_key}-state.json
 
 ## 4. Jira Wrap-Up
 
@@ -38,7 +38,7 @@ Leader → requirements-analyst: "Perform Jira wrap-up operations:
 
    a. getTransitionsForJiraIssue → find the transition ID for the testing status
       Configured: use jira_workflow.testing_status
-      Default: look for a status containing 'Test' or '测试' (e.g., 'In Testing', '测试中')
+      Default: look for a status containing 'Test' or equivalent in the project's language
 
    b. Transition the MAIN issue to the testing status
       **IMPORTANT**: This transition triggers automatic creation of sub-issues (with testing note fields).
@@ -49,7 +49,7 @@ Leader → requirements-analyst: "Perform Jira wrap-up operations:
 
    d. For EACH SUB-ISSUE, classify by summary and handle accordingly:
 
-      **「提测说明」类型** (summary contains "提测说明"):
+      **Testing Note type** (summary contains testing-note keyword, e.g. "提测说明"):
       - editJiraIssue → fill in the testing notes
         Content based on: proposal summary + change scope + test results
         Template: use jira_workflow.testing_note_template if configured, otherwise use default:
@@ -60,11 +60,11 @@ Leader → requirements-analyst: "Perform Jira wrap-up operations:
           - Verification steps: <how to verify the changes>
       - transition to completion status
 
-      **「测试计划」类型** (summary contains "测试计划"):
+      **Test Plan type** (summary contains test-plan keyword, e.g. "测试计划"):
       - DO NOT modify or transition — leave it for QA team to handle
 
       Configured: use jira_workflow.sub_completion_status
-      Default: look for a status containing 'Done' or '完成' (e.g., 'Done', '已完成')
+      Default: look for a status containing 'Done' or equivalent in the project's language
 
 ## 5. Cleanup
 

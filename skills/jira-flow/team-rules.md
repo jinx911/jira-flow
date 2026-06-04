@@ -18,6 +18,7 @@ This file contains `{variable}` template placeholders. The Leader substitutes th
 | Variable | Source | Substitution Timing |
 |----------|--------|---------------------|
 | `{issue_key}` | jira-flow input parameter | Before spawn |
+| `{key}` | = `{issue_key}` | Alias used in phase briefs |
 | `{root_path}` | jira-flow/project-config.md | Before spawn |
 | `{repo_architecture}` | Built from project-config.md backend/frontend/modules | Before spawn |
 | `{openspec_base_path}` | jira-flow/project-config.md → openspec.changes_path | Before spawn |

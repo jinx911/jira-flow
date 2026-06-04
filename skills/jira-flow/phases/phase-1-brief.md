@@ -10,23 +10,80 @@ description: Phase 1 complete instructions for interactive requirements analysis
 
 ## Overview
 
-Phase 1 consists of 5 steps with 3 interaction checkpoints (A/B/C), followed by Gate 1:
+Phase 1 consists of 6 steps with 3 interaction checkpoints (A/B/C), followed by Gate 1:
 
 | Step | Agent | Output | User Interaction |
 |------|-------|--------|------------------|
+| Step 0: Jira Requirement Check | requirements-analyst | Jira quality score (80/100 threshold) | None (fail → Jira comment + user) |
 | Step 1: Initial Analysis | requirements-analyst | Requirement summary + clarifying questions | **Checkpoint A**: User confirms understanding |
 | Step 2: Options Proposal | requirements-analyst | 2-3 implementation approaches | **Checkpoint B**: User selects approach |
 | Step 3: Generate Proposal | requirements-analyst | proposal.md | None |
-| Step 3b: Quality Check | requirements-analyst | Quality score (80/100 threshold) | None (automatic, borderline → user) |
+| Step 3b: Proposal Quality Check | requirements-analyst | Proposal quality score (80/100 threshold) | None (internal, no Jira comment) |
 | Step 4: Architecture Design | architect | design.md + key design decisions | **Checkpoint C**: User confirms design decisions (conditional) |
 | Gate 1 | Leader | Final confirmation | Gate 1 |
 
 ### State Tracking
 
 After each step, Leader updates `{root_path}/.jira-flow/{issue_key}-state.json`:
-- `phase1_substep`: "step1" | "step2" | "step3" | "step3b" | "step4" | "gate1"
+- `phase1_substep`: "step0" | "step1" | "step2" | "step3" | "step3b" | "step4" | "gate1"
 - `user_answers`: accumulates user responses from Checkpoint A and B
+- `jira_quality_score`: populated after Step 0 (total, dimensions, passed, attempt)
 - `quality_score`: populated after Step 3b (total, dimensions, passed, attempt)
+
+---
+
+## Step 0: Jira Requirement Quality Check
+
+Leader → requirements-analyst: "Read Jira issue {key} via Atlassian MCP (including description, comments, and attachments).
+
+1. Read `~/.claude/skills/jira-flow/phases/jira-quality-rubric.md`
+2. Score the Jira issue against the rubric (0/50/100 per dimension)
+3. Calculate weighted total
+4. Generate improvement suggestions for failing dimensions
+
+Output via SendMessage to Leader:
+  - jira_quality_score: { total_score, passed, dimensions, failures, improvement_suggestions }"
+
+Wait for score report → update state: `phase1_substep = "step0"`, `jira_quality_score = <score object>`
+
+### Jira Quality Gate Decision
+
+**Score >= 80 AND all dimension minimums met**:
+- Proceed to Step 1
+
+**Score < 80 OR any dimension below minimum**:
+
+1. Leader delegates to requirements-analyst: "Post a requirement quality feedback comment to Jira issue {key} using mcp__atlassian-rovo__addCommentToJiraIssue (cloudId: {cloudId}) with the following content:
+
+   ```
+   ## Requirement Quality Score: {total}/100 — NEEDS IMPROVEMENT
+
+   | Dimension | Score | Weight | Status |
+   |-----------|-------|--------|--------|
+   | {dimension rows with PASS/FAIL} |
+
+   ### Failing Dimensions
+   {for each failure: **Dimension (Score)**: reason}
+
+   ### Improvement Suggestions
+   {numbered list of actionable suggestions for the product manager}
+   ```"
+
+2. Leader asks user: "Jira requirement score is {total}/100 (below 80 threshold). A feedback comment has been posted to Jira. Proceed anyway / wait for updated requirements / abort?"
+
+3. If user chooses to proceed → continue to Step 1 (with a note that requirement quality is low)
+4. If user chooses to wait → save state, end flow, user re-runs /jira-flow after requirements are updated
+
+### Run Mode Behavior
+
+**Semi-auto mode**:
+- Leader displays score breakdown to the user
+- Score >= 80: auto-proceed to Step 1
+- Score < 80: always ask user (proceed / wait / abort)
+
+**Full-auto mode**:
+- Score >= 80: auto-proceed to Step 1
+- Score < 80: auto-post Jira comment, then ask user (cannot auto-proceed on poor requirements)
 
 ---
 
@@ -159,25 +216,10 @@ Wait for score report → update state: `phase1_substep = "step3b"`, `quality_sc
 - Proceed to Step 4
 
 **Score < 80 OR any dimension below minimum**:
-1. Leader delegates to requirements-analyst: "Post a quality score comment to Jira issue {key} using mcp__atlassian-rovo__addCommentToJiraIssue (cloudId: {cloudId}) with the following content:
-
-   ```
-   ## Proposal Quality Score: {total}/100 — REVISION REQUIRED
-
-   | Dimension | Score | Weight | Status |
-   |-----------|-------|--------|--------|
-   | {dimension rows with PASS/FAIL} |
-
-   ### Failing Dimensions
-   {for each failure: **Dimension (Score)**: reason}
-
-   ### Improvement Suggestions
-   {numbered list of actionable suggestions}
-   ```"
-
-2. Leader delegates revision to requirements-analyst: "Revise proposal.md to address: {improvement_suggestions}. Re-score after revision."
-3. Retry limit: max 2 scoring attempts total (1 initial + 1 revision)
-4. After 2 failed attempts: Leader asks user whether to proceed anyway or abort
+1. Leader delegates revision to requirements-analyst: "Revise proposal.md to address: {improvement_suggestions}. Re-score after revision."
+2. Retry limit: max 2 scoring attempts total (1 initial + 1 revision)
+3. After 2 failed attempts: Leader asks user whether to proceed anyway or abort
+4. This is an internal quality gate — no Jira comment is posted
 
 ### Run Mode Behavior
 

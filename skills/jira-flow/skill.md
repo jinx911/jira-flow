@@ -132,7 +132,7 @@ Invoke `/create-team` in programmatic mode with `team_name: "jira-flow-{issue_ke
 
 | Phase | Output | Gate |
 |-------|--------|------|
-| 1 Requirements Analysis (Interactive) | proposal.md + design.md (5 steps + Checkpoint A/B/C + quality gate at Step 3b) | Confirm → spawn dev agents |
+| 1 Requirements Analysis (Interactive) | proposal.md + design.md (6 steps: Jira quality gate + Checkpoint A/B/C + proposal quality gate) | Confirm → spawn dev agents |
 | 2 Task Planning + Branch | tasks.md + git branch | Confirm task list + branch |
 | 3 TDD Development | Implementation code | Confirm progress |
 | 4 Code Review | Review report | CRITICAL/HIGH → fix |

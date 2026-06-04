@@ -131,6 +131,7 @@ jira-flow/
 │   │   ├── gate.md               ← Gate mechanism + pass criteria
 │   │   ├── phases/               ← Phase instructions (lazy-loaded)
 │   │   │   ├── phase-1-brief.md  ← Requirement analysis
+│   │   │   ├── jira-quality-rubric.md ← Jira requirement quality scoring
 │   │   │   ├── quality-rubric.md ← Proposal quality scoring rubric
 │   │   │   ├── phase-2-brief.md  ← Task planning + branch creation
 │   │   │   ├── phase-3-brief.md  ← TDD development

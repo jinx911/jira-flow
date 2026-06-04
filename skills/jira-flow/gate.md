@@ -1,6 +1,6 @@
 ---
 partOf: jira-flow
-version: 1.0.0
+version: 1.1.0
 description: Gate mechanism detailed rules. Leader reads this file when executing Gate checkpoints.
 ---
 
@@ -30,7 +30,7 @@ At the end of each Phase, the Leader executes a Gate checkpoint:
 
 | Phase | Must Satisfy | When Quality is Insufficient |
 |-------|-------------|------------------------------|
-| Gate 1 | proposal.md + design.md have no placeholders (TBD/TODO), are internally consistent, affected modules are clearly identified. **proposal.md quality score >= 80** (from Step 3b). Checkpoint A/B/C have already ensured directional correctness; Gate 1 is the final deliverable quality check | Leader forwards modification feedback to the relevant agent, re-run Gate after changes |
+| Gate 1 | proposal.md + design.md have no placeholders (TBD/TODO), are internally consistent, affected modules are clearly identified. **proposal.md quality_score.passed == true** (from Step 3b, scored per `phases/quality-rubric.md`). Checkpoint A/B/C have already ensured directional correctness; Gate 1 is the final deliverable quality check | Leader forwards modification feedback to the relevant agent, re-run Gate after changes |
 | Gate 2 | tasks.md has no placeholders, every step has file paths and commands, blockedBy is correct | Planner revises and re-runs Gate |
 | Gate 3 | All Tasks are completed, tests pass | Incomplete tasks continue; blocked tasks are handled as exceptions |
 | Gate 4 | No CRITICAL issues, no unresolved HIGH issues | Dev fixes, code-reviewer re-evaluates |

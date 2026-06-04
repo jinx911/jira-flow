@@ -57,11 +57,11 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
     "passed": true,
     "attempt": 1,
     "dimensions": {
-      "clarity": 100,
-      "acceptance_criteria": 50,
-      "scope": 100,
-      "context": 100,
-      "impact": 100
+      "clarity": { "raw": 100, "weighted": 25.0, "pass": true },
+      "acceptance_criteria": { "raw": 50, "weighted": 12.5, "pass": true },
+      "scope": { "raw": 100, "weighted": 20.0, "pass": true },
+      "context": { "raw": 100, "weighted": 15.0, "pass": true },
+      "impact": { "raw": 100, "weighted": 15.0, "pass": true }
     },
     "failures": [],
     "improvement_suggestions": []
@@ -71,12 +71,12 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
     "passed": true,
     "attempt": 1,
     "dimensions": {
-      "completeness": 100,
-      "clarity": 50,
-      "feasibility": 100,
-      "traceability": 50,
-      "impact": 100,
-      "consistency": 100
+      "completeness": { "raw": 100, "weighted": 25.0, "pass": true },
+      "clarity": { "raw": 50, "weighted": 10.0, "pass": true },
+      "feasibility": { "raw": 100, "weighted": 20.0, "pass": true },
+      "traceability": { "raw": 50, "weighted": 7.5, "pass": true },
+      "impact": { "raw": 100, "weighted": 10.0, "pass": true },
+      "consistency": { "raw": 100, "weighted": 10.0, "pass": true }
     },
     "failures": [],
     "improvement_suggestions": []
@@ -141,7 +141,7 @@ Any exception exceeding its limit → Leader must escalate to the user; do not c
      phase1_substep == "step1" → Step 1 (initial analysis)
      phase1_substep == "step2" → Step 2 (options proposal, re-use user_answers.checkpoint_a)
      phase1_substep == "step3" → Step 3 (generate proposal, re-use user_answers.checkpoint_b)
-     phase1_substep == "step3b" → Step 3b (quality check passed, proceed to Step 4)
+     phase1_substep == "step3b" → Step 3b (re-score proposal; check quality_score.passed — if true, proceed to Step 4; if false, re-attempt revision)
      phase1_substep == "step4" → Step 4 (architecture design)
      phase1_substep == "gate1" → Gate 1
    current_phase == 2: tasks.md exists → Phase 3, otherwise → Phase 2

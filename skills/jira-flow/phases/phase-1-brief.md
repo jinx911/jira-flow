@@ -27,8 +27,8 @@ Phase 1 consists of 6 steps with 3 interaction checkpoints (A/B/C), followed by 
 After each step, Leader updates `{root_path}/.jira-flow/{issue_key}-state.json`:
 - `phase1_substep`: "step0" | "step1" | "step2" | "step3" | "step3b" | "step4" | "gate1"
 - `user_answers`: accumulates user responses from Checkpoint A and B
-- `jira_quality_score`: populated after Step 0 (total, dimensions, passed, attempt)
-- `quality_score`: populated after Step 3b (total, dimensions, passed, attempt)
+- `jira_quality_score`: populated after Step 0 (total, dimensions, passed — from agent output; attempt — Leader-managed counter)
+- `quality_score`: populated after Step 3b (total, dimensions, passed — from agent output; attempt — Leader-managed counter)
 
 ---
 
@@ -232,6 +232,8 @@ Wait for score report → update state: `phase1_substep = "step3b"`, `quality_sc
 **Full-auto mode**:
 - Score >= 80: auto-proceed to Step 4
 - Score < 80: auto-revise once; if revised score >= 75, auto-proceed; else ask user
+
+---
 
 ## Step 4: Architecture Design
 

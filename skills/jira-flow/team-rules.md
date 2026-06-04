@@ -35,6 +35,7 @@ This file contains `{variable}` template placeholders. The Leader substitutes th
 | `{frontend_repo_path}` | project-config.md → frontend.repo_path | Before Phase 3+ spawn |
 | `{repo_paths}` | All repo paths combined | Before Phase 3+ spawn |
 | `{deploy_branch}` | project-config.md → deploy_branch | Before Phase 6 spawn |
+| `{cloudId}` | jira-flow/project-config.md or getAccessibleAtlassianResources | Before Phase 1 spawn |
 
 The fully substituted text is passed as the Agent spawn's prompt parameter.
 

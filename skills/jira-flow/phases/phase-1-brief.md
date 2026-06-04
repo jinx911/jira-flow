@@ -1,6 +1,6 @@
 ---
 partOf: jira-flow
-version: 2.0.0
+version: 2.1.0
 description: Phase 1 complete instructions for interactive requirements analysis. Leader reads this file when entering Phase 1.
 ---
 
@@ -14,25 +14,25 @@ Phase 1 consists of 6 steps with 3 interaction checkpoints (A/B/C), followed by 
 
 | Step | Agent | Output | User Interaction |
 |------|-------|--------|------------------|
-| Step 0: Jira Requirement Check | requirements-analyst | Jira quality score (80/100 threshold) | None (fail → Jira comment + user) |
-| Step 1: Initial Analysis | requirements-analyst | Requirement summary + clarifying questions | **Checkpoint A**: User confirms understanding |
-| Step 2: Options Proposal | requirements-analyst | 2-3 implementation approaches | **Checkpoint B**: User selects approach |
-| Step 3: Generate Proposal | requirements-analyst | proposal.md | None |
-| Step 3b: Proposal Quality Check | requirements-analyst | Proposal quality score (80/100 threshold) | None (internal, no Jira comment) |
-| Step 4: Architecture Design | architect | design.md + key design decisions | **Checkpoint C**: User confirms design decisions (conditional) |
+| Step 1: Jira Requirement Check | requirements-analyst | Jira quality score (80/100 threshold) | None (fail → Jira comment + user) |
+| Step 2: Initial Analysis | requirements-analyst | Requirement summary + clarifying questions | **Checkpoint A**: User confirms understanding |
+| Step 3: Options Proposal | requirements-analyst | 2-3 implementation approaches | **Checkpoint B**: User selects approach |
+| Step 4: Generate Proposal | requirements-analyst | proposal.md | None |
+| Step 5: Proposal Quality Check | requirements-analyst | Proposal quality score (80/100 threshold) | None (internal, no Jira comment) |
+| Step 6: Architecture Design | architect | design.md + key design decisions | **Checkpoint C**: User confirms design decisions (conditional) |
 | Gate 1 | Leader | Final confirmation | Gate 1 |
 
 ### State Tracking
 
 After each step, Leader updates `{root_path}/.jira-flow/{issue_key}-state.json`:
-- `phase1_substep`: "step0" | "step1" | "step2" | "step3" | "step3b" | "step4" | "gate1"
+- `phase1_substep`: "step1" | "step2" | "step3" | "step4" | "step5" | "step6" | "gate1"
 - `user_answers`: accumulates user responses from Checkpoint A and B
-- `jira_quality_score`: populated after Step 0 (total, dimensions, passed — from agent output; attempt — Leader-managed counter)
-- `quality_score`: populated after Step 3b (total, dimensions, passed — from agent output; attempt — Leader-managed counter)
+- `jira_quality_score`: populated after Step 1 (total, dimensions, passed — from agent output; attempt — Leader-managed counter)
+- `quality_score`: populated after Step 5 (total, dimensions, passed — from agent output; attempt — Leader-managed counter)
 
 ---
 
-## Step 0: Jira Requirement Quality Check
+## Step 1: Jira Requirement Quality Check
 
 Leader → requirements-analyst: "Read Jira issue {key} via Atlassian MCP (including description, comments, and attachments).
 
@@ -44,12 +44,12 @@ Leader → requirements-analyst: "Read Jira issue {key} via Atlassian MCP (inclu
 Output via SendMessage to Leader:
   - jira_quality_score: { total_score, passed, dimensions, failures, improvement_suggestions }"
 
-Wait for score report → update state: `phase1_substep = "step0"`, `jira_quality_score = <score object>`
+Wait for score report → update state: `phase1_substep = "step1"`, `jira_quality_score = <score object>`
 
 ### Jira Quality Gate Decision
 
 **Score >= 80 AND all dimension minimums met**:
-- Proceed to Step 1
+- Proceed to Step 2
 
 **Score < 80 OR any dimension below minimum**:
 
@@ -71,23 +71,23 @@ Wait for score report → update state: `phase1_substep = "step0"`, `jira_qualit
 
 2. Leader asks user: "Jira requirement score is {total}/100 (below 80 threshold). A feedback comment has been posted to Jira. Proceed anyway / wait for updated requirements / abort?"
 
-3. If user chooses to proceed → continue to Step 1 (with a note that requirement quality is low)
+3. If user chooses to proceed → continue to Step 2 (with a note that requirement quality is low)
 4. If user chooses to wait → save state, end flow, user re-runs /jira-flow after requirements are updated
 
 ### Run Mode Behavior
 
 **Semi-auto mode**:
 - Leader displays score breakdown to the user
-- Score >= 80: auto-proceed to Step 1
+- Score >= 80: auto-proceed to Step 2
 - Score < 80: always ask user (proceed / wait / abort)
 
 **Full-auto mode**:
-- Score >= 80: auto-proceed to Step 1
+- Score >= 80: auto-proceed to Step 2
 - Score < 80: auto-post Jira comment, then ask user (cannot auto-proceed on poor requirements)
 
 ---
 
-## Step 1: Initial Analysis
+## Step 2: Initial Analysis
 
 Leader → requirements-analyst: "Read Jira issue {key} via Atlassian MCP (including description, comments, and attachments), explore related code, and produce:
 
@@ -112,7 +112,7 @@ Output via SendMessage to Leader (NOT a file):
   - affected_modules: list of modules/repos likely involved
   - baseline_conflicts: list of baseline constraints found (may be empty)"
 
-Wait for completion → update state: `phase1_substep = "step1"`
+Wait for completion → update state: `phase1_substep = "step2"`
 
 ### Checkpoint A: Requirement Confirmation
 
@@ -129,7 +129,7 @@ Leader logs the requirement summary and auto-passes. If there are clarifying que
 
 ---
 
-## Step 2: Options Proposal
+## Step 3: Options Proposal
 
 Leader → requirements-analyst: "Based on the confirmed requirement understanding and the user's input from Checkpoint A:
 {user_answers.checkpoint_a}
@@ -155,7 +155,7 @@ Output via SendMessage to Leader:
   - recommendation: which option and why
   - trade_off_summary: key differences between options in ≤3 sentences"
 
-Wait for completion → update state: `phase1_substep = "step2"`
+Wait for completion → update state: `phase1_substep = "step3"`
 
 ### Checkpoint B: Option Selection
 
@@ -172,7 +172,7 @@ Leader logs the options and auto-selects the recommended one. Save: `user_answer
 
 ---
 
-## Step 3: Generate Proposal
+## Step 4: Generate Proposal
 
 Leader → requirements-analyst: "The user selected: {user_answers.checkpoint_b}
 
@@ -190,11 +190,11 @@ Output to: {changes_path}/{spec_name}/proposal.md
 spec_name naming rule: <module-abbreviation>-<brief-description>, following the naming style of existing directories.
 On completion, send a message containing: spec_name, proposal summary (key points only)"
 
-Wait for completion → update state: `phase1_substep = "step3"`, record `spec_name`
+Wait for completion → update state: `phase1_substep = "step4"`, record `spec_name`
 
 ---
 
-## Step 3b: Proposal Quality Check
+## Step 5: Proposal Quality Check
 
 Leader → requirements-analyst: "Score the proposal.md you just generated.
 
@@ -208,12 +208,12 @@ Output via SendMessage to Leader:
   - quality_score: { total_score, passed, dimensions, failures, improvement_suggestions }
   - Do NOT modify proposal.md yet"
 
-Wait for score report → update state: `phase1_substep = "step3b"`, `quality_score = <score object>`
+Wait for score report → update state: `phase1_substep = "step5"`, `quality_score = <score object>`
 
 ### Quality Gate Decision
 
 **Score >= 80 AND all dimension minimums met**:
-- Proceed to Step 4
+- Proceed to Step 6
 
 **Score < 80 OR any dimension below minimum**:
 1. Leader delegates revision to requirements-analyst: "Revise proposal.md to address: {improvement_suggestions}. Re-score after revision."
@@ -225,17 +225,17 @@ Wait for score report → update state: `phase1_substep = "step3b"`, `quality_sc
 
 **Semi-auto mode**:
 - Leader displays score breakdown to the user
-- Score >= 80: auto-proceed to Step 4
+- Score >= 80: auto-proceed to Step 6
 - Score 75-79: user decides whether to proceed
 - Score < 75: always block, auto-revise once
 
 **Full-auto mode**:
-- Score >= 80: auto-proceed to Step 4
+- Score >= 80: auto-proceed to Step 6
 - Score < 80: auto-revise once; if revised score >= 75, auto-proceed; else ask user
 
 ---
 
-## Step 4: Architecture Design
+## Step 6: Architecture Design
 
 Leader → architect: "Read {changes_path}/{spec_name}/proposal.md, generate design.md, and explore the related code architecture.
 Database: Reference {root_path}/.claude/project-config.md → databases (query table structures to assist design).
@@ -257,7 +257,7 @@ On completion, send a message containing:
   - design_decisions: list of key architectural decisions that may need user attention (may be empty)
     Each decision: { decision: '...', rationale: '...', alternatives_rejected: ['...'] }"
 
-Wait for completion → update state: `phase1_substep = "step4"`
+Wait for completion → update state: `phase1_substep = "step6"`
 
 ### Checkpoint C: Design Confirmation (Conditional)
 

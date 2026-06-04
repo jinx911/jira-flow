@@ -92,10 +92,10 @@ Location: `{root_path}/.jira-flow/{issue_key}-state.json`
 | `phase_decisions` | Key decisions per phase (≤100 chars/field) | After each Gate passes |
 | `agent_context_snapshots` | Last known progress per agent | On every agent progress report / completion |
 | `agent_heartbeats` | Agent health status (working/idle/blocked/unknown) | On every progress update from agent |
-| `phase1_substep` | Phase 1 internal step tracking | After each Phase 1 step completes |
+| `phase1_substep` | Phase 1 internal step tracking ("step1"-"step6" | "gate1") | After each Phase 1 step completes |
 | `user_answers` | User responses from Phase 1 Checkpoints | After each checkpoint interaction |
-| `quality_score` | Phase 1 proposal quality score object | After Step 3b quality check |
-| `jira_quality_score` | Phase 1 Jira requirement quality score object | After Step 0 Jira quality check |
+| `quality_score` | Phase 1 proposal quality score object | After Step 5 quality check |
+| `jira_quality_score` | Phase 1 Jira requirement quality score object | After Step 1 Jira quality check |
 | `failed_agents` | List of agents that failed to spawn or recover | On spawn failure or exhaustion |
 
 ### Persistence Timing
@@ -137,12 +137,12 @@ Any exception exceeding its limit → Leader must escalate to the user; do not c
    - agent_context_snapshots[agent_name] → agent knows where the previous instance left off
 5. Determine breakpoint → jump to the corresponding Phase:
    current_phase == 1:
-     phase1_substep not set or "step0" → Step 0 (Jira requirement quality check)
-     phase1_substep == "step1" → Step 1 (initial analysis)
-     phase1_substep == "step2" → Step 2 (options proposal, re-use user_answers.checkpoint_a)
-     phase1_substep == "step3" → Step 3 (generate proposal, re-use user_answers.checkpoint_b)
-     phase1_substep == "step3b" → Step 3b (re-score proposal; check quality_score.passed — if true, proceed to Step 4; if false, re-attempt revision)
-     phase1_substep == "step4" → Step 4 (architecture design)
+     phase1_substep not set or "step1" → Step 1 (Jira requirement quality check)
+     phase1_substep == "step2" → Step 2 (initial analysis)
+     phase1_substep == "step3" → Step 3 (options proposal, re-use user_answers.checkpoint_a)
+     phase1_substep == "step4" → Step 4 (generate proposal, re-use user_answers.checkpoint_b)
+     phase1_substep == "step5" → Step 5 (proposal quality check; check quality_score.passed — if true, proceed to Step 6; if false, re-attempt revision)
+     phase1_substep == "step6" → Step 6 (architecture design)
      phase1_substep == "gate1" → Gate 1
    current_phase == 2: tasks.md exists → Phase 3, otherwise → Phase 2
    current_phase == 3: TaskList has incomplete tasks → continue Phase 3, otherwise → Phase 4

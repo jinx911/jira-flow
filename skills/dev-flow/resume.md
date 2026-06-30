@@ -1,8 +1,10 @@
 # 断点恢复
 
-> 入口：`/dev-flow`（无参）→ 列出所有未完成 flow 供选择；`/dev-flow <key>` → 直接恢复指定 flow。
-
 dev-flow 检测到 `{root_path}/.dev-flow/{issue_key}-state.json` 时，按本流程处理。
+
+## 列出未完成 flow（`/dev-flow` 无参）
+
+`/dev-flow` 不带参数时，扫描 `{root_path}/.dev-flow/*-state.json`，列出所有未完成 flow（dev-flow 在 Stage 4 后删 state，故存在即未完成）。每条展示：issue_key + Stage 进度条（`[✅1][🔄2][·3][·4]`）+ branch + spec_name + doc_version。用 AskUserQuestion 让用户选一个（或都不选）；选定后按下方"恢复流程"接续。无 state → 提示"无未完成 flow，可用 `/dev-flow <key 或需求>` 开新 flow"。
 
 ## 最小 state 结构
 

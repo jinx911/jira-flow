@@ -9,8 +9,8 @@ description: 当用户提供 Jira issue key/URL（jira 模式）或自然语言�
 - **jira 模式**：匹配 `^[A-Z]+-\d+$` 或包含 `/browse/`
 - **free-flow 模式**：其余全部；整段文本作为 `requirement_text`
   - issue key 自动生成为 `ff-{slug}-{HHmm}`（`{slug}` = 文本 kebab-case 前 40 字符）
+- **恢复模式**：`$ARGUMENTS` 为空（`/dev-flow` 无参）→ 列出 `.dev-flow/*-state.json` 未完成 flow 供选择恢复（见 `resume.md`）。
 - **学习命令**：`/dev-flow learn <note>` 手动记一条 manual_note；`/dev-flow learn --upgrade` 触发 distill 提炼升级。
-- **无参（恢复模式）**：`$ARGUMENTS` 为空 → 扫 `{root_path}/.dev-flow/*-state.json`，列出未完成 flow（`[stage 进度] key · branch · spec`）让用户选；选定后按 `resume.md` 恢复。无未完成 flow 则询问新需求。
 
 ## 四个阶段（Stage）
 
@@ -96,7 +96,7 @@ Stage: [✅1][✅2][🔄3][·4]  {issue_key} | Branch: {branch} | Complexity: {c
 3. Leader 确保 `{changes_path}` 和 `.dev-flow/` 存在（`mkdir -p`）——属基础设施，非业务代码
 
 ### 1. 解析 + 配置
-1. 从 `$ARGUMENTS` 判断模式
+1. 从 `$ARGUMENTS` 判断模式：空 → 列出 `.dev-flow/*-state.json` 供选择恢复；jira key → jira 模式；其余 → free-flow 模式
 2. 解析 `root_path`；歧义则问
 3. 读 `{root_path}/.claude/project-config.md`
 4. jira 模式：`cloudId` 为空则解析

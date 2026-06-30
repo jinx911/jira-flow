@@ -142,6 +142,8 @@ dev-flow/
 │   │   └── SKILL.md
 │   ├── ship/                    ← Stage 4: finalize + deploy + Jira
 │   │   └── SKILL.md
+│   ├── learn/                   ← Learning loop: capture/apply/distill (self-improvement)
+│   │   └── SKILL.md
 │   ├── init-dev-flow/           ← Project initialization
 │   ├── create-team/             ← Team creation (hub-and-spoke)
 │   ├── delete-team/             ← Team cleanup

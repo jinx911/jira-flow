@@ -333,6 +333,8 @@ spec.triggers:    { ... }           # 可选，扩展 spec-author 触发条件
 │   └── SKILL.md
 ├── ship/                           ← Stage 4
 │   └── SKILL.md
+├── learn/                          ← 学习闭环（capture/apply/distill，自我成长）
+│   └── SKILL.md
 ├── init-dev-flow/                  ← 一键初始化
 ├── create-team/  delete-team/  git-ops/
 └──（agents/ 可选，dev-flow 不读）
@@ -391,3 +393,6 @@ A：不是。按单元 `test_strategy` 决定：`tdd`/`regression` 才走 TDD，
 
 **Q：agent 文件还需要吗？**
 A：dev-flow 不读它们。可留作其他场景独立使用，也可删除，不影响 dev-flow。
+
+**Q：dev-flow 怎么"自我学习"？**
+A：`learn` 子 skill 闭环——每次 run 结束 `capture` 记信号（Gate 失败 / spec-delta / 重试升级 / 用户纠正）到 `.dev-flow/lessons/`；`distill` 把稳定的沉淀进项目 `knowledge.md`（自动）和全局 `playbook.md`（自动），skill 结构升级走 diff 审核；下次 run `apply` 把相关经验注入对应 agent。手动 `/dev-flow learn <note>` 随时教一条；`/dev-flow learn --upgrade` 触发提炼。

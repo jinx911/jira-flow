@@ -142,6 +142,8 @@ dev-flow/
 │   │   └── SKILL.md
 │   ├── ship/                    ← Stage 4：收尾 + 部署 + Jira
 │   │   └── SKILL.md
+│   ├── learn/                   ← 学习闭环：capture/apply/distill（自我成长）
+│   │   └── SKILL.md
 │   ├── init-dev-flow/           ← 项目初始化
 │   ├── create-team/             ← 团队创建（Hub-and-Spoke）
 │   ├── delete-team/             ← 团队清理

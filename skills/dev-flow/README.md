@@ -31,6 +31,7 @@ Leader 每阶段触发一个子 skill、跑 Gate（checklist）、再推进。Le
 - `dev-loop` —— TDD 开发 + 文档优先变更
 - `review-test` —— 代码审查 + 验证 + 修复环
 - `ship` —— 收尾 + 部署 + Jira 收尾
+- `learn` —— 学习闭环（capture/apply/distill，自我成长；Stage 0 注入经验、Stage 4 记信号）
 
 ## 关键特性
 

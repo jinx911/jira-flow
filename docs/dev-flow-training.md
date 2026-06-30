@@ -1,8 +1,6 @@
-> ⚠️ **状态：** Dev-Flow 已从旧的 6 阶段 jira-flow 重构为**薄编排器 + 4 个子 skill**（`spec-author` → `dev-loop` → `review-test` → `ship`）。下方命名已更新；后续章节的逐阶段详解为旧版内容，正在刷新。当前架构见顶层 [README](../README.zh-CN.md)。
-
 # Dev-Flow 培训指南
 
-> 全链路 Agent Team 开发工作流 — 从 Jira Issue 到代码提交
+> 全链路 Agent Team 开发工作流 —— 从需求（Jira Issue 或自然语言）到代码提交
 
 ---
 
@@ -10,34 +8,40 @@
 
 ### 什么是 Dev-Flow？
 
-Dev-Flow 是一个 Claude Code Skill，自动化执行从 Jira Issue 到代码提交的完整开发流程。它通过 Hub-and-Spoke 模式协调多个 AI Agent，以 6 个 Phase + 6 个 Gate 的结构完成：
+Dev-Flow 是一个 Claude Code Skill，自动化执行从需求到代码提交的完整开发流程。它用一个**薄编排器 + 4 个可复用子 skill**，通过 Hub-and-Spoke 模式协调多个 AI Agent，以 **4 个 Stage + 4 个 Gate** 完成：
 
 ```
-Jira Issue → 需求分析 → 架构设计 → 任务规划 → TDD开发 → 代码评审 → 测试验证 → 提交推送
+需求（Jira key 或文本）→ spec → dev → review-test → ship → 分支推送 + Jira 更新
+
+Stage 1: spec-author   需求 → proposal.md + design.md（自适应工程章节）
+Stage 2: dev-loop      tasks.md + 分支 + 实现（条件化 TDD + 文档优先变更）
+Stage 3: review-test   审查 + 验证 + 修复环
+Stage 4: ship          定稿 + 部署 + Jira 收尾
 ```
 
 ### 核心价值
 
-- **全链路自动化**: 从需求到提交，无需手动切换工具
-- **质量内建**: 6 个 Gate 检查点，确保每步质量
-- **TDD 驱动**: 强制测试先行，代码质量有保障
-- **人机协作**: 半自动模式下关键节点由用户确认
-- **可恢复**: 断点恢复机制，中断后可继续
+- **全链路自动化**：从需求到提交，无需手动切换工具
+- **文档驱动**：结构化 proposal/design，按触发条件展开工程章节；Gate 是完整性 checklist（不自评打分）
+- **活文档**：开发中发现需求缺口，先改文档再改代码（spec-delta + `doc_version` 追踪）
+- **条件化 TDD**：TDD 只用于可测逻辑；脚手架/配置不折腾
+- **人机协作**：半自动模式下 Gate 由用户确认
+- **可恢复**：断点恢复，状态存 `.dev-flow/{issue_key}-state.json`
 
 ### 两种运行模式
 
 | 特性 | 半自动（默认） | 全自动 |
 |------|--------------|--------|
-| Gate | 展示摘要 + 用户确认 | 自动通过，记录摘要 |
-| 异常 | 所有异常询问用户 | 仅超限时询问 |
-| Jira 收尾 | 用户确认后提交 | 自动提交 |
+| Gate | 展示 checklist 摘要 + 用户确认 | 自动放行，记录摘要 |
+| 范围性 spec-delta（mini-Gate） | 总是问用户 | 仅超重试上限才问 |
+| Jira/分支动作 | 先确认 | 自动执行 |
 | 适用场景 | 复杂需求、首次使用 | 简单需求、熟悉流程后 |
 
 ---
 
 ## 2. 架构详解
 
-### Hub-and-Spoke 模式
+### 薄编排器 + 4 子 skill
 
 ```
                     ┌──────────┐
@@ -45,271 +49,203 @@ Jira Issue → 需求分析 → 架构设计 → 任务规划 → TDD开发 → 
                     └────┬─────┘
                          │ /dev-flow OA-3650
                     ┌────▼─────┐
-                    │  Leader  │ ← 编排器（不执行任何操作）
+                    │  Leader  │ ← 编排器（只协调，不执行业务）
                     └────┬─────┘
-                         │ SendMessage
-              ┌──────────┼──────────┐
-         ┌────▼────┐ ┌──▼────┐ ┌──▼──────┐
-         │Core Team│ │Dev    │ │Review   │
-         │         │ │Team   │ │Team     │
-         └─────────┘ └───────┘ └─────────┘
+                         │ 触发子 skill（每阶段一个）
+         ┌──────────┬────┴────┬──────────┐
+     spec-author  dev-loop  review-test   ship
+         │            │          │          │
+       (spawn)     (spawn)    (spawn)    (spawn)
+         └────────────┴──────────┴──────────┘
+                         │ SendMessage（hub-spoke）
+                    各角色 Agent
 ```
 
-**关键原则**:
-- Leader **永远不直接执行**任何操作
-- Leader 只做协调、决策和状态流转
-- 所有 Agent 间通信**必须通过 Leader 路由**
-- Agent **严禁直连**其他 Agent
+**关键原则**：
+- Leader **永不直接执行**业务操作，只协调/决策/路由（保持上下文干净）
+- 每个阶段是一个**可独立调用**的子 skill（`/spec-author`、`/review-test`、`/ship` 能单独跑）
+- 所有 Agent 通信**必须经 Leader 路由**，严禁直连
+- **角色专长内嵌在子 skill** —— dev-flow **不读** `~/.claude/agents/*.md`（agent 文件可选）
+- **预生成 prompt**：流程开始一次性把变量代入 `.dev-flow/{key}/prompts/{stage}.md`，spawn = 读文件 + `Agent()`
+- **TaskList 是唯一事实源** —— 不追心跳/snapshot
 
-### 7 个 Agent 角色
+### 角色（内嵌于子 skill，非外部依赖）
 
-| Agent | 模型 | 创建时机 | 职责 |
-|-------|------|---------|------|
-| requirements-analyst | Opus | Phase 0 | 读取 Jira、分析需求、生成 proposal |
-| architect | Opus | Phase 0 | 架构设计、生成 design.md |
-| planner | Opus | Phase 0 | 任务拆分、TDD 步骤规划 |
-| backend-developer | Sonnet | Gate 1 后 | 后端代码实现 |
-| frontend-developer | Sonnet | Gate 1 后 | 前端代码实现（按需） |
-| code-reviewer | Sonnet | Phase 4 前 | 代码评审、严重性分级 |
-| tester | Sonnet | Phase 5 前 | 测试验证、Bug 报告 |
+| 角色 | 所在子 skill | 职责 |
+|-------|---------|------|
+| requirements-analyst | spec-author | 读 Jira/需求、核心章节、澄清 |
+| architect | spec-author | 工程章节、架构决策 |
+| planner | dev-loop | tasks.md 拆分 |
+| backend-developer | dev-loop / ship | 建分支、实现、定稿、部署 |
+| frontend-developer | dev-loop | 前端实现（按需） |
+| code-reviewer | review-test | 评审、严重性分级 |
+| tester | review-test | 测试验证、Bug 报告 |
 
-### 按需扩容策略
+> 这些角色的专长已收进对应子 skill 的 SKILL.md。`~/.claude/agents/*.md` 不再被读取，可留可删。
 
-不是所有 Agent 都一开始就创建：
+### 按需 spawn
 
 ```
-Phase 0: Core Team (requirements-analyst + architect + planner)
-  ↓
-Gate 1: 检查 design.md 是否涉及前端/后端
-  ↓
-Gate 1 后: 创建 backend-developer / frontend-developer
-  ↓
-Phase 4 前: 创建 code-reviewer
-  ↓
-Phase 5 前: 创建 tester
+Stage 1: spec-author 的 requirements-analyst + architect
+Stage 2: dev-loop 的 planner → backend-developer / frontend-developer
+Stage 3: review-test 的 code-reviewer + tester（修复回 dev）
+Stage 4: ship 的 backend-developer；Jira 收尾 → requirements-analyst 或 Leader
 ```
-
-**为什么？** 节省资源，按需创建，每个 Agent 都有明确的生命周期。
 
 ---
 
-## 3. Phase 详解
+## 3. Stage 详解
 
-### Phase 0: 初始化
+### Stage 0：初始化（编排器自己）
 
-**做什么**:
-1. 前置检查（依赖 skill、superpowers 插件、agent 定义、MCP）
-2. 解析 Jira Issue Key
-3. 加载配置（projects.json → project-config.md → dev-flow config）
-4. 断点检测（检查是否有未完成的流程）
-5. 选择运行模式（半自动/全自动）
-6. 创建核心团队
+**做什么**：
+1. 预检：依赖 skill（create-team / delete-team / git-ops / init-dev-flow / spec-author / dev-loop / review-test / ship）、superpowers 插件；jira 模式需 Atlassian MCP + CodeGraph
+2. 解析输入（jira 模式 / free-flow 模式）
+3. 加载配置（dev-flow config → projects.json → 项目 config）
+4. 断点检测（`.dev-flow/{key}-state.json` 存在则按 `resume.md` 恢复）
+5. 选运行模式
+6. **预生成每阶段 prompt 文件** + `/create-team`（`team_name = dev-flow-{key}`）
 
-**前置清理**: Phase 1 首个 agent 执行 `find {changes_path} -type d -empty -delete` 清理残留空目录。
-
-**产出**: 配置就绪 + 核心团队已创建
+**产出**：配置就绪 + 团队已建 + prompt 文件就位
 
 ---
 
-### Phase 1: 需求分析
+### Stage 1：spec-author（需求 → 结构化 spec）
 
-**参与者**: requirements-analyst → architect
+**参与者**：requirements-analyst → architect
 
-**流程**:
+**流程**：
 ```
 requirements-analyst:
-  1. 清理空目录: find {changes_path} -type d -empty -delete
-  2. 通过 Atlassian MCP 读取 Jira Issue（描述、评论、附件）
-  3. 提出 2-3 个实现方案（含权衡分析）
-  4. 给出推荐方案及理由
-  5. 基线关联检查（若 baseline_path 存在且非空）:
-     - 扫描 baseline_path 下相关基线文档
-     - 在 proposal 中标注"基线约束"段落
-     - 确保方案不与基线冲突
-  6. spec self-review（占位符、一致性、范围、歧义检查）
-  7. 输出: proposal.md
+  1. jira 模式：经 Atlassian MCP 读 Jira（描述/评论/附件）；free 模式：用 requirement_text
+  2. 写核心章节：背景目标 / 范围(in,out) / 验收标准(Given/When/Then) / 影响模块
+  3. 仅在歧义时问澄清（自适应，非固定 checkpoint）
+  4. 检测触发条件（见下）
 
 architect:
-  1. 读取 proposal.md
-  2. 探索相关代码架构
-  3. 设计模块拆分（单一职责、接口清晰）
-  4. design self-review
-  5. 输出: design.md + 是否涉及后端/前端
+  1. 读 proposal + 探索相关代码
+  2. 按触发条件展开工程章节
+  3. 写架构决策（复杂需求强制非空）+ 关键文件 + 复用点
+  4. 输出 design.md
 ```
 
-**产出**: `proposal.md` + `design.md`
+**自适应工程章节（按触发条件展开）**：
 
-**Gate 1 通过标准**:
-- proposal.md + design.md 无占位符（TBD/TODO）
-- 内部一致（各章节不矛盾）
-- 涉及模块明确
+| 触发条件 | 章节 |
+|---|---|
+| 新表/字段/migration | 数据模型 |
+| 新增/改动接口 | API 契约 |
+| 跨模块/跨服务 | 接口边界 |
+| 状态机/多步/异步 | 状态与流程 |
+| 重要错误路径/权限/支付 | 错误契约 |
+| 恒久 | 测试策略（每条 AC） |
+
+**产出**：`proposal.md` + `design.md`
+
+**Gate 1（checklist，不打分）**：
+- 核心 + 触发的工程章节齐
+- 无 TBD/TODO 占位符
+- 每条验收标准有测试策略条目
+- 复杂需求架构决策非空
 
 ---
 
-### Phase 2: 任务规划 + 分支
+### Stage 2：dev-loop（tasks + 分支 + 条件化 TDD + 文档优先变更）
 
-**参与者**: planner → backend-developer
+**参与者**：planner → backend-developer / frontend-developer
 
-**流程**:
+**流程**：
 ```
 planner:
-  1. 读取 design.md
-  2. 拆分为咬合粒度任务（每步 2-5 分钟）
-  3. 每个任务包含 TDD 步骤:
-     RED(写失败测试) → Verify RED → GREEN(最小实现) → Verify GREEN → REFACTOR → Commit
-  4. 创建 tasks.md + TaskCreate 跟踪条目
-  5. 标注 blockedBy 依赖关系
+  1. 读 proposal + design
+  2. 拆 tasks.md，每个单元带 test_strategy 标签（来自 design 测试策略）
+  3. 标注 blockedBy 依赖
 
 backend-developer:
-  1. /git-ops 创建开发分支
-  2. 基于 master 创建，命名规则参考 project-config
+  1. /git-ops 建分支
+
+dev:
+  按单元 test_strategy 实现
 ```
 
-**产出**: `tasks.md` + git branch
+**条件化 TDD（非必要不用）**：
 
-**Gate 2 通过标准**:
-- tasks.md 无占位符
-- 每步有文件路径和命令
-- blockedBy 依赖正确
+| 标签 | 适用 | 行为 |
+|---|---|---|
+| `tdd` | 可测业务逻辑/算法/状态流转 | RED→验证→GREEN→验证→REFACTOR |
+| `regression` | bug 修复 | 先写回归测试再修 |
+| `smoke` | 脚手架/配置/migration/UI | 直接实现，可选冒烟测试 |
+| `none` | 纯配置/typo/文档 | 不写测试 |
+
+**文档优先变更（核心创新）** —— 发现需求缺口/错误时：
+1. 暂停编码，标记 spec-delta
+2. **先改** proposal/design/tasks.md（标注 `> [SPEC-DELTA vN] 原因`）
+3. 分类：范围性 → Leader 拉用户 mini-Gate；澄清性 → 记录继续
+4. `doc_version++`，记 `spec_deltas[]`
+5. 按更新后的文档继续
+
+**长任务**：tasks.md >8 单元分轮（≤8/轮），轮间持久化进度。
+
+**Gate 2**：TaskList 干净 + 标签单元测试绿 + spec-delta 已确认/记录
 
 ---
 
-### Phase 3: TDD 开发
+### Stage 3：review-test（审查 + 验证 + 修复环）
 
-**参与者**: backend-developer + frontend-developer（并行）
+**参与者**：code-reviewer → tester；修复回 dev
 
-**核心原则 — TDD 铁律**:
-> 禁止无失败测试先写生产代码。先写测试 → 先写测试 → 先写测试！
-
-**流程**:
-```
-对每个任务:
-  1. RED:   写最小测试展示期望行为
-  2. Verify: 运行确认失败（特性缺失，非语法错误）
-  3. GREEN: 写最小代码通过测试
-  4. Verify: 运行确认通过，无其他测试回归
-  5. REFACTOR: 清理（去重、改善命名、提取辅助）
-  6. Commit: 提交当前步骤
-```
-
-**前后端并行冲突处理**:
-
-| 场景 | 策略 |
-|------|------|
-| 不同仓库 | 天然隔离，各自开发 |
-| 同仓库不同文件 | 同分支，各改各的 |
-| 同仓库同文件不同位置 | 同分支，注意合并顺序 |
-| 同仓库同文件有重叠 | **Worktree 隔离**，各自在独立工作树开发 |
-
-**产出**: 实现代码 + 测试代码
-
-**Gate 3 通过标准**:
-- 所有 Task 状态 completed
-- 测试通过
-
----
-
-### Phase 4: 代码评审
-
-**参与者**: code-reviewer
-
-**流程**:
+**流程**：
 ```
 code-reviewer:
-  1. 获取 BASE_SHA（分支创建前）和 HEAD_SHA（当前 HEAD）
-  2. git diff 结构化评审（不凭记忆）
-  3. 严重性分级:
-     CRITICAL: 安全漏洞/数据丢失风险 → 阻断合并
-     HIGH: Bug 或重大质量问题 → 合并前修复
-     MEDIUM: 可维护性问题 → 建议修复
-     LOW: 风格或小建议 → 可选
-  4. 对每个问题: 文件路径:行号 + 问题描述 + 修复建议
-```
+  1. git diff 结构化评审（不凭记忆）
+  2. 多轮管道：质量（恒过）→ 架构(≥3 文件/新接口) → 安全(用户输入/认证/数据写入)
+  3. 严重性分级：CRITICAL(阻断)/HIGH(合并前必修)/MEDIUM(建议)/LOW(可选)
+  4. 每条：file:line + 描述 + 修复建议
 
-**产出**: 评审报告（按 C/H/M/L 分级）
-
-**Gate 4 通过标准**:
-- 无 CRITICAL
-- 无未处理的 HIGH
-- 如有 → dev 修复后 code-reviewer 重评
-
----
-
-### Phase 5: 测试验证
-
-**参与者**: tester
-
-**核心原则 — 证据铁律**:
-> 任何完成声明必须有即时验证证据支撑。禁止"应该能用了"！
-
-**流程**:
-```
 tester:
-  1. 读取 proposal.md + tasks.md
-  2. 运行测试套件（单元 + 集成 + E2E）
-  3. 数据库验证（通过 MCP 查询）
-  4. 每项验证提供: 命令 + 输出摘要 + 退出码
-  5. Bug 报告: 复现步骤 + 预期 + 实际 + 证据
+  1. 跑单元/集成/E2E + 数据库验证（MCP）
+  2. 证据优先：命令 → 输出 → 退出码（禁止"应该能用"）
+  3. Bug 报告：复现 + 预期 + 实际 + 证据
 ```
 
-**Bug 修复循环**（全过 Leader 路由）:
-```
-tester 发现 Bug → Leader → Leader 判断归属 → dev 修复 → Leader → tester 复验
-→ 未通过 → 再走一轮（≤3次） → 仍失败 → Leader 询问用户
-```
+**修复环**：CRITICAL/HIGH + bug → dev 修 → 重审/重测，≤3 轮再升级用户。
 
-**产出**: 测试报告
-
-**Gate 5 通过标准**:
-- 全部测试通过
-- 无未修复 Bug
+**Gate 3**：无 CRITICAL + 无未解决 HIGH + 测试通过无未修 bug
 
 ---
 
-### Phase 6: 收尾
+### Stage 4：ship（定稿 + 部署 + Jira）
 
-**参与者**: backend-developer + requirements-analyst
+**参与者**：backend-developer；Jira 收尾 → requirements-analyst 或 Leader
 
-**流程**:
+**流程**：
 ```
 backend-developer:
-  1. 确认所有测试通过（完整测试套件）
-  2. 清理调试代码（console.log/dd/dump 等）
-  3. 提交并推送分支
-  4. merge 到 deploy_branch（如配置了 test 分支）
+  1. 跑全量测试 + 清 debug 代码（console.log/dd/dump/var_dump）
+  2. 提交并推送分支（只推分支，MR 手动）
+  3. 配置了 deploy_branch → 合并并推送（触发自动部署）
 
-requirements-analyst:
-  1. transition 主 Jira → "测试中"（或配置的目标状态）
-  2. 搜索自动创建的子 Jira
-  3. 填写提测说明（变更概述、涉及模块、测试要点）
-  4. transition 子 Jira → "已完成"（或配置的完成状态）
+Jenkins（可选，配置 + MCP 都在）:
+  AskUserQuestion 确认参数 → jenkins_build_and_watch → 失败取 log 问用户
+
+Jira 收尾（仅 jira 模式）:
+  1. transition 主单 → 测试状态（触发自动建子单）
+  2. JQL 查子单
+  3. 填提测说明（按 testing_note_template）→ transition 子单完成
 ```
 
-**产出**: 分支已推送 + Jira 已更新 + 团队已清理
-
-**Gate 6 通过标准**:
-- 分支已推送
-- deploy_branch 已合并（若配置了）
-- Jira 已更新
+**Gate 4**：分支已推送 + deploy_branch 合并(若配置) + Jenkins 成功/跳过(若配置) + Jira 更新(jira 模式)
 
 ---
 
 ## 4. 配置体系
 
-### 三层配置架构
+### 三层配置
 
 ```
-Layer 1: 全局索引
-  ~/.claude/configs/projects.json
-  → 项目路径 → 项目名称映射
-
-Layer 2: 项目配置
-  {root_path}/.claude/project-config.md
-  → 完整项目信息（仓库、数据库、测试环境、构建命令）
-
-Layer 3: 流程配置
-  ~/.claude/skills/dev-flow/project-config.md
-  → dev-flow 工作流配置（root_path、cloudId、分支命名、OpenSpec）
+Layer 1: 全局索引   ~/.claude/configs/projects.json            （路径 → 项目名）
+Layer 2: 项目配置   {root_path}/.claude/project-config.md       （仓库/数据库/环境/构建）
+Layer 3: 流程配置   ~/.claude/skills/dev-flow/project-config.md （root_path/cloudId/分支命名/OpenSpec）
 ```
 
 ### 查找链
@@ -318,55 +254,38 @@ Layer 3: 流程配置
 dev-flow/project-config.md → root_path
   → projects.json → 项目名
     → {root_path}/.claude/project-config.md → 完整配置
-
-root_path 为空时: 自动从 projects.json 填充
 ```
 
 ### 关键配置项
 
 ```yaml
 # dev-flow/project-config.md
-root_path: ""                    # 留空则从 projects.json 自动填充
-cloudId: ""                      # Atlassian Cloud ID（自动获取）
-branch_naming:
-  format: "{issue_key}"          # 分支命名规则（直接用 Jira key）
-openspec:
-  changes_path: "openspec/changes"   # 工作产出（proposal/design/tasks）
-  baseline_path: "openspec/specs"    # 系统基线（可选，Phase 1 基线关联检查）
+root_path: ""
+cloudId: ""
+branch_naming: { format: "{issue_key}" }
+openspec: { changes_path: "openspec/changes", baseline_path: "openspec/specs" }
 
-# project-config.md
-databases:                       # 数据库连接（测试验证用）
-  - name: main
-    connection: "tenant-wd"
-test_environments:               # 测试环境
-  - url: "https://..."
-    credentials: "..."
-build_commands:                  # 构建命令
-  backend: "php artisan"
-  frontend: "pnpm build:backend"
-deploy_branch: "test"            # 部署分支（可选）
-jira_workflow:                   # Jira 工作流（可选）
-  testing_status: "测试中"
-  auto_creates_sub: true
-  sub_completion_status: "已完成"
-  testing_note_template: "..."
+# {root_path}/.claude/project-config.md
+databases:        { main: { mcp: "...", desc: "..." } }
+build_commands:   { frontend: "...", backend: "..." }
+deploy_branch:    "test"           # 可选
+jenkins:          { job_name: "...", ... }          # 可选
+jira_workflow:    { testing_status: "测试中", ... }  # 可选
+spec.triggers:    { ... }           # 可选，扩展 spec-author 触发条件
 ```
 
 ---
 
 ## 5. Superpowers 集成
 
-每个 Phase 都引用一个 Superpowers 方法论技能。Agent 在执行时先 Read 对应的 SKILL.md 获取完整方法论。
+每个子 skill 引用一个 Superpowers 方法论；Agent 执行时按 `[superpowers:xxx]` 标记加载。
 
-| Phase | Superpowers Skill | 核心约束 |
-|-------|------------------|---------|
-| 1 需求分析 | brainstorming | 2-3 方案 + 权衡 + self-review |
-| 2 任务规划 | writing-plans | 咬合粒度 + TDD 步骤 + 零占位符 |
-| 3 TDD 开发 | TDD + executing-plans | RED→Verify→GREEN→Verify→REFACTOR |
-| 4 代码评审 | requesting-code-review | git diff + 严重性分级 |
-| 5 测试验证 | verification | 证据铁律: 命令→输出→结论 |
-| 6 收尾 | finishing-a-branch | 完整测试→清理→推送 |
-| 异常处理 | systematic-debugging | 先复现→定位根因→最小修复 |
+| Stage | 子 skill | Superpowers Skill | 核心约束 |
+|---|---|---|---|
+| 1 | spec-author | brainstorming | 自适应章节 + checklist Gate |
+| 2 | dev-loop | test-driven-development + executing-plans | 条件化 TDD + 文档优先变更 |
+| 3 | review-test | requesting-code-review + verification-before-completion | 严重性分级 + 证据铁律 |
+| 4 | ship | finishing-a-development-branch | 全量测试 → 清理 → 推送 |
 
 ---
 
@@ -374,20 +293,22 @@ jira_workflow:                   # Jira 工作流（可选）
 
 ### 统一重试上限
 
-| 异常类型 | 自修复次数 | 超限处理 |
-|---------|-----------|---------|
-| 构建失败 | dev ≤2 次 | Leader 询问用户 |
-| 测试 Bug | 循环 ≤3 次 | Leader 询问用户 |
-| 需求/设计问题 | 修改后重 Gate ≤2 次 | Leader 询问是否终止 |
-| Task 冲突 | planner 重排 ≤1 次 | Leader 决策串行化或 worktree |
-| Agent 无响应 | 重发 1 次 | Leader 询问用户 |
-| MCP 连接失败 | 重试 ≤2 次 | 保存 state，恢复后继续 |
+| 异常 | 自修复上限 | 超限 |
+|---|---:|---|
+| 构建失败 | 2 | 问用户 |
+| 测试 bug 循环 | 3 | 问用户 |
+| 需求/设计修订（spec-delta） | 2 | 问是否终止 |
+| 任务冲突 | 1 次重排 | Leader 串行化/worktree |
+| Agent 无响应 | 1 次 ping | 问用户 |
+| 上下文耗尽 | 1 次替补审批 | 问用户 |
+| MCP 故障 | 2 次重试 | 存状态，停止 |
 
-### 超时检测
+### 空闲检测（取代心跳）
 
-- Phase 1-2: Agent 5 分钟未回复 → Leader 发 ping
-- Phase 3-5: Agent 10 分钟未回复 → Leader 发 ping
-- ping 无响应 → Leader 询问用户: 等待 / 跳过 / 终止
+- 信号：TaskList 活动 + agent 进度更新（**不追心跳/snapshot**）
+- Stage 1-2：10 分钟无 TaskUpdate 且无消息 → Leader 发**一次** ping
+- Stage 3-4：15 分钟
+- ping 无响应 → 问用户（等待/跳过/spawn 替补，**不自动替补**）
 
 ---
 
@@ -395,85 +316,78 @@ jira_workflow:                   # Jira 工作流（可选）
 
 ```
 ~/.claude/skills/
-├── dev-flow/
-│   ├── skill.md                    ← 流程骨架
-│   ├── gate.md                     ← Gate 机制（通过标准 + 摘要格式）
-│   ├── phases/                     ← Phase 指令（按需加载）
-│   │   ├── phase-1-brief.md        ← 需求分析
-│   │   ├── phase-2-brief.md        ← 任务规划 + 分支
-│   │   ├── phase-3-brief.md        ← TDD 开发
-│   │   ├── phase-4-brief.md        ← 代码评审
-│   │   ├── phase-5-brief.md        ← 测试验证
-│   │   └── phase-6-brief.md        ← 收尾
-│   ├── project-config.md           ← 流程配置
-│   ├── project-config.example.md   ← 项目配置模板
-│   ├── team-rules.md               ← 团队通信规则
-│   └── resume.md                   ← 断点恢复逻辑
-├── create-team/                    ← 团队创建
-├── delete-team/                    ← 团队清理
-├── git-ops/                        ← Git 操作
-└── init-dev-flow/                 ← 一键初始化
+├── dev-flow/                       ← 薄编排器
+│   ├── SKILL.md                    ← 阶段路由 + Gate + 委托 + state
+│   ├── gate.md                     ← checklist Gate
+│   ├── team-rules.md               ← 通信规则 + Health + 变量注入
+│   ├── resume.md                   ← 断点恢复 + 旧版兼容
+│   └── project-config.example.md
+├── spec-author/                    ← Stage 1
+│   ├── SKILL.md
+│   ├── triggers.md                 ← 触发条件 → 工程章节
+│   └── templates/                  ← proposal/design 模板
+├── dev-loop/                       ← Stage 2
+│   ├── SKILL.md
+│   └── doc-first-change.md         ← 文档优先变更协议
+├── review-test/                    ← Stage 3
+│   └── SKILL.md
+├── ship/                           ← Stage 4
+│   └── SKILL.md
+├── init-dev-flow/                  ← 一键初始化
+├── create-team/  delete-team/  git-ops/
+└──（agents/ 可选，dev-flow 不读）
 ```
 
-**Lazy Loading 设计**: Leader 只在进入某个 Phase 时才 Read 对应的 phase-N-brief.md，减少上下文占用。
+**渐进式披露**：每个 SKILL.md 保持精简（编排器 ≤150 行，子 skill ≤80–100），细节进 bundled 文件按需 Read。
 
 ---
 
 ## 8. 快速开始
 
-### 1. 安装依赖
-
-确保以下已就绪：
-- Claude Code CLI
-- superpowers 插件 (v5.0+)
-- 依赖 skills: create-team, delete-team, git-ops, init-dev-flow
-- Agent 定义: 7 个 agent 在 `~/.claude/agents/`
-- MCP: atlassian-rovo（必选）, mysql（可选）, playwright（可选）
+### 1. 前置
+- Claude Code CLI + superpowers 插件 (v5.0+)
+- skills：create-team、delete-team、git-ops、init-dev-flow、spec-author、dev-loop、review-test、ship
+- MCP：atlassian-rovo（jira 模式必选）、jenkins/playwright（可选）
+- agents：**可选**（dev-flow 自包含）
 
 ### 2. 初始化
-
 ```
 /init-dev-flow
 ```
 
-一键初始化：自动检测技术栈、生成双份配置、注册项目、验证 MCP 连通性。
-
 ### 3. 运行
-
 ```
-/dev-flow OA-3650
-```
-
-或：
-```
-/dev-flow https://your-domain.atlassian.net/browse/OA-3650
+/dev-flow OA-3650                  # jira 模式
+/dev-flow 给用户管理加 CSV 导出    # free-flow 模式
 ```
 
 ### 4. 交互
-
-半自动模式下，每个 Gate 会展示摘要并等待确认：
-- 确认 → 继续下一 Phase
-- 修改 → Leader 转发修改指令
-- 终止 → 清理团队，流程结束
+半自动模式下每个 Gate 展示 checklist 摘要：确认 → 下一 Stage；修改 → Leader 转发；终止 → `/delete-team`。
 
 ---
 
 ## 9. FAQ
 
-**Q: Leader 为什么不能直接执行操作？**
-A: 关注点分离。Leader 只做协调和决策，所有执行由专门的 Agent 完成。这确保了每个操作都有明确的职责归属和审计链。
+**Q：Leader 为什么不能直接执行？**
+A：保持上下文干净。Leader 只协调/决策/路由，执行交给子 skill 的 agent。这保证职责清晰、可审计，且复杂需求不会撑爆 Leader 上下文。
 
-**Q: 如果 Agent 之间的任务有冲突怎么办？**
-A: Leader 检测冲突后，会使用 worktree 隔离（为每个 Agent 创建独立工作树），避免文件冲突。
+**Q：和旧 jira-flow 的主要区别？**
+A：① 6 阶段 → 4 阶段子 skill；② 双 rubric 自评 → 结构化模板 + checklist Gate；③ 文档冻结 → 活文档（文档优先变更）；④ 处处 TDD → 条件化 TDD；⑤ 重型协调协议（ack/心跳/6 步拼 prompt）→ 预生成 prompt + TaskList 事实源；⑥ 依赖 agent 文件 → 解耦（专长内嵌子 skill）。
 
-**Q: 可以在中途暂停吗？**
-A: 可以。dev-flow 支持断点恢复，状态保存在 `{root_path}/.dev-flow/{issue_key}-state.json`。下次启动同一 Issue 会自动恢复。
+**Q：子 skill 能单独用吗？**
+A：能。`/spec-author` 只出设计、`/review-test` 只审现有分支、`/ship` 只收尾。bugfix-flow 也可复用 `ship` / `spec-author`。
 
-**Q: 全自动模式安全吗？**
-A: 全自动模式下，CRITICAL 和 HIGH 级别的问题仍然会升级到用户。Gate 质量检查仍然执行，只是跳过人工确认。超过重试上限也会升级到用户。
+**Q：开发中发现需求错了怎么办？**
+A：触发文档优先变更——先改 proposal/design/tasks.md（标 spec-delta），范围性变更拉用户 mini-Gate 确认，再改代码。文档与代码始终同步。
 
-**Q: 如何为新项目配置 dev-flow？**
-A: 运行 `/init-dev-flow`，一键自动检测技术栈、生成双份配置、验证 MCP。也可以手动创建 `project-config.md`（参考 `project-config.example.md`）。
+**Q：可以中途暂停吗？**
+A：可以。状态存 `.dev-flow/{issue_key}-state.json`，下次同 issue 自动恢复；旧 `.jira-flow/*-state.json` 也能兼容映射。
 
-**Q: Superpowers 技能怎么工作？**
-A: 每个 Phase 引用特定的 superpowers 技能。Agent 收到 `[superpowers:xxx]` 标记后，会先 Read 对应的 SKILL.md 获取完整方法论，然后遵循其中的原则执行任务。dev-flow 的 Gate 机制替代了 superpowers 的交互式验证。
+**Q：全自动模式安全吗？**
+A：CRITICAL/HIGH 仍升级用户；Gate 质量检查照跑，只跳过人工确认；超重试上限也升级用户。
+
+**Q：TDD 是强制的吗？**
+A：不是。按单元 `test_strategy` 决定：`tdd`/`regression` 才走 TDD，`smoke`/`none` 直接实现。
+
+**Q：agent 文件还需要吗？**
+A：dev-flow 不读它们。可留作其他场景独立使用，也可删除，不影响 dev-flow。

@@ -29,6 +29,7 @@ description: 当用户提供 Jira issue key/URL（jira 模式）或自然语言�
 `learn` 子 skill 在两点自动触发：
 - **Stage 0**（预生成 prompt 之后）：调 `learn apply` → 读 `{root_path}/.dev-flow/knowledge.md` → 挑相关条目 → 注入对应子 skill 的 prompt 文件。
 - **Stage 4**（Gate 4 通过后）：调 `learn capture` → 把本次 run 信号写入 `{root_path}/.dev-flow/lessons/{issue_key}-{HHmm}.jsonl`，`lessons_captured++`。
+- **distill 提醒**：`lessons_captured` 每 ≥5 时，编排器在 Stage 4 收尾后**提醒**（不自动跑）"建议执行 `/dev-flow learn --upgrade`"；distill 流程见 `learn/distill-protocol.md`。
 
 手动：`/dev-flow learn <note>` → capture 一条 manual_note；`/dev-flow learn --upgrade` → distill（见 `learn/SKILL.md`）。
 首次 run（无 knowledge）→ apply 返回空，零开销。

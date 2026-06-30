@@ -19,6 +19,7 @@ dev-flow 检测到 `{root_path}/.dev-flow/{issue_key}-state.json` 时，按本�
   "spec_deltas": [],
   "stage_results": {},
   "spawned_agents": [],
+  "lessons_captured": 0,
   "updated_at": "<ISO>"
 }
 ```
@@ -36,6 +37,7 @@ dev-flow 检测到 `{root_path}/.dev-flow/{issue_key}-state.json` 时，按本�
 | `spec_deltas[]` | 开发中文档变更日志（`{stage, reason, classification, at}`） |
 | `stage_results` | 每阶段 Gate 摘要文本（恢复上下文用） |
 | `spawned_agents` | 恢复时预期存在的 agent |
+| `lessons_captured` | 累计 capture 次数；每达 5 次提醒跑 `/dev-flow learn --upgrade` |
 
 ## 持久化时机
 
@@ -74,6 +76,8 @@ dev-flow 检测到 `{root_path}/.dev-flow/{issue_key}-state.json` 时，按本�
    - `4` → `ship`（确认推送/部署/Jira 状态，补齐缺失步骤）
 6. `spec_deltas` 非空时，恢复编码前先回放最新文档状态。
 7. 阶段 4 完成后删除 state 文件。
+
+> 注：`learn` 的数据（`.dev-flow/lessons/` 与 `knowledge.md`）独立于 state.json，断点恢复不影响它们；恢复后若需提炼经验，手动 `/dev-flow learn --upgrade`。
 
 ## 崩溃恢复
 

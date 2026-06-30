@@ -9,6 +9,7 @@ description: 当用户提供 Jira issue key/URL（jira 模式）或自然语言�
 - **jira 模式**：匹配 `^[A-Z]+-\d+$` 或包含 `/browse/`
 - **free-flow 模式**：其余全部；整段文本作为 `requirement_text`
   - issue key 自动生成为 `ff-{slug}-{HHmm}`（`{slug}` = 文本 kebab-case 前 40 字符）
+- **学习命令**：`/dev-flow learn <note>` 手动记一条 manual_note；`/dev-flow learn --upgrade` 触发 distill 提炼升级。
 
 ## 四个阶段（Stage）
 
@@ -22,6 +23,15 @@ description: 当用户提供 Jira issue key/URL（jira 模式）或自然语言�
 | 4 收尾 | `ship` | 推送 + 部署 + Jira 收尾 | Gate 4：最终总结 |
 
 进入每阶段前，Read 该子 skill 的 `SKILL.md`。每个 Gate 前，Read `gate.md`。
+
+## 学习闭环（learn）
+
+`learn` 子 skill 在两点自动触发：
+- **Stage 0**（预生成 prompt 之后）：调 `learn apply` → 读 `{root_path}/.dev-flow/knowledge.md` → 挑相关条目 → 注入对应子 skill 的 prompt 文件。
+- **Stage 4**（Gate 4 通过后）：调 `learn capture` → 把本次 run 信号写入 `{root_path}/.dev-flow/lessons/{issue_key}-{HHmm}.jsonl`，`lessons_captured++`。
+
+手动：`/dev-flow learn <note>` → capture 一条 manual_note；`/dev-flow learn --upgrade` → distill（见 `learn/SKILL.md`）。
+首次 run（无 knowledge）→ apply 返回空，零开销。
 
 ## 进度看板
 
@@ -79,7 +89,7 @@ Stage: [✅1][✅2][🔄3][·4]  {issue_key} | Branch: {branch} | Complexity: {c
 ## 初始化
 
 ### 0. 预检
-1. skill 齐备：`create-team`、`delete-team`、`git-ops`、`init-dev-flow`、`spec-author`、`dev-loop`、`review-test`、`ship`
+1. skill 齐备：`create-team`、`delete-team`、`git-ops`、`init-dev-flow`、`spec-author`、`dev-loop`、`review-test`、`ship`、`learn`
 2. jira 模式：Atlassian MCP 可用；`{root_path}` 下有 CodeGraph，否则问用户
 3. Leader 确保 `{changes_path}` 和 `.dev-flow/` 存在（`mkdir -p`）——属基础设施，非业务代码
 
@@ -93,15 +103,16 @@ Stage: [✅1][✅2][🔄3][·4]  {issue_key} | Branch: {branch} | Complexity: {c
 
 ### 2. 预生成 prompt + 建团队
 1. 替换变量 → 为每阶段写 `.dev-flow/{issue_key}/prompts/{stage}.md`
-2. `/create-team`，`team_name: "dev-flow-{issue_key}"`，角色见 Dependencies
+2. 调 `learn apply`，把返回的"相关经验"块注入对应阶段 prompt 文件（spec-author / dev-loop / review-test）
+3. `/create-team`，`team_name: "dev-flow-{issue_key}"`，角色见 Dependencies
 
 ## 健康与恢复
 - 空闲/ping 规则 + 消息格式：见 `team-rules.md`
 - 断点恢复 + 重试上限：见 `resume.md`
 
 ## Dependencies
-- **Skills：** create-team、delete-team、git-ops、init-dev-flow、spec-author、dev-loop、review-test、ship
+- **Skills：** create-team、delete-team、git-ops、init-dev-flow、spec-author、dev-loop、review-test、ship、learn
 - **Plugin：** superpowers >= 5.0.0
-- **Agents（可选——dev-flow 不读）：** requirements-analyst、architect、planner、backend-developer、frontend-developer、code-reviewer、tester。角色专长已内嵌子 skill；这些文件可留存供其他场景，但不是依赖。
+- **Agents（可选——dev-flow 不读）：** requirements-analyst、architect、planner、backend-developer、frontend-developer、code-reviewer、tester。角色专长已内嵌子 skill；这些文件可留存供其他场景，但不是依赖。`learn` distill 时会 spawn 一个临时 curator agent（general-purpose，非常驻）。
 - **MCP：** atlassian-rovo（jira 模式）、playwright（可选，E2E）
 - **project_config：** 必需（经 `/init-dev-flow`）

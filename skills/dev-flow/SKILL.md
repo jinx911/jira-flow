@@ -10,6 +10,7 @@ description: 当用户提供 Jira issue key/URL（jira 模式）或自然语言�
 - **free-flow 模式**：其余全部；整段文本作为 `requirement_text`
   - issue key 自动生成为 `ff-{slug}-{HHmm}`（`{slug}` = 文本 kebab-case 前 40 字符）
 - **学习命令**：`/dev-flow learn <note>` 手动记一条 manual_note；`/dev-flow learn --upgrade` 触发 distill 提炼升级。
+- **无参（恢复模式）**：`$ARGUMENTS` 为空 → 扫 `{root_path}/.dev-flow/*-state.json`，列出未完成 flow（`[stage 进度] key · branch · spec`）让用户选；选定后按 `resume.md` 恢复。无未完成 flow 则询问新需求。
 
 ## 四个阶段（Stage）
 

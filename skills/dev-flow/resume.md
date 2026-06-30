@@ -1,5 +1,7 @@
 # 断点恢复
 
+> 入口：`/dev-flow`（无参）→ 列出所有未完成 flow 供选择；`/dev-flow <key>` → 直接恢复指定 flow。
+
 dev-flow 检测到 `{root_path}/.dev-flow/{issue_key}-state.json` 时，按本流程处理。
 
 ## 最小 state 结构

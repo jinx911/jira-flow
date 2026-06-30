@@ -1,77 +1,76 @@
-# Project Config Example
+# 项目配置示例
 
-> This file is an example template for project configuration.
-> In practice, `/init-dev-flow` auto-generates it at `<project-root>/.claude/project-config.md`.
-> Alternatively, manually copy this file and fill in actual values.
+> 本文件是项目配置的示例模板。
+> 实际使用时 `/init-dev-flow` 会在 `<project-root>/.claude/project-config.md` 自动生成。
+> 也可手动复制本文件并填入实际值。
 
 ---
 
 ## OpenSpec
 
 openspec:
-  changes_path: "openspec/changes"      # dev-flow work output directory (relative to root_path)
-  baseline_path: "openspec/specs"       # System baseline docs (optional, leave empty to skip baseline correlation checks)
+  changes_path: "openspec/changes"      # dev-flow 工作输出目录（相对 root_path）
+  baseline_path: "openspec/specs"       # 系统基线文档（可选，留空则跳过基线关联检查）
 
-## Basic Info
+## 基础信息
 
 root_path: "/path/to/your/project"
 tech_stack: { backend: "laravel", frontend: "react", database: "mysql" }
 
-## Runtime
+## 运行时
 
-# If using Docker:
+# 若用 Docker：
 docker: { container: "your-php-container", workdir: "/workspace/your-project/" }
 artisan: 'docker exec your-php-container bash -c "cd /workspace/your-project && {cmd}"'
 
-## Repository Architecture
+## 仓库架构
 
-# Single repo:
+# 单仓库：
 backend: { main_repo: "." }
 
-# Multi-repo (uncomment and fill):
+# 多仓库（取消注释并填写）：
 # backend: { main_repo: "backend/", modules_path: "backend/modules/" }
 # frontend: { repo: "frontend/" }
 # modules:
 #   - { name: "module-a", desc: "Module A", path: "backend/modules/module-a/" }
 
-## Git Config
+## Git 配置
 
 git:
-  main_branch: "master"  # or "main"
+  main_branch: "master"  # 或 "main"
   branch_naming:
     format: "{issue_key}"
     types: [feature, fix, refactor]
   commit_format: "<type>(<scope>): <description>"
 
-## Deploy Branch (optional)
+## 部署分支（可选）
 
-# If your project auto-deploys from a specific branch (e.g., "test" → staging):
+# 若项目从特定分支自动部署（如 "test" → staging）：
 # deploy_branch: "test"
-# If omitted, Stage 4 will skip the merge-to-deploy-branch step.
+# 未配置则 Stage 4 跳过合并到部署分支这一步。
 
-## Jenkins Deploy (optional)
+## Jenkins 部署（可选）
 
-# If your project has a Jenkins CI/CD pipeline, configure this section to auto-deploy
-# after Stage 4 branch finalization. If omitted or if Jenkins MCP is unavailable,
-# the deploy step is silently skipped — no warning, no error.
+# 若项目有 Jenkins CI/CD，配置此项以在 Stage 4 定稿后自动部署。
+# 未配置或 Jenkins MCP 不可用时，部署步骤静默跳过——不报警、不报错。
 #
 # jenkins:
-#   job_name: "oa-service"               # Jenkins job name (required if jenkins section is present)
-#   default_params:                       # Default parameters for the build
+#   job_name: "oa-service"               # Jenkins 任务名（出现 jenkins 段时必填）
+#   default_params:                       # 构建默认参数
 #     deploy_type: "api"
 #     test_version: "kn"
-#   branch_param: "oa_branch"             # Parameter name that receives the branch name (default: "oa_branch")
-#   branch_value: "test"                  # Branch value to deploy — typically the deploy_branch (e.g. "test"), NOT the feature branch
+#   branch_param: "oa_branch"             # 接收分支名的参数名（默认 "oa_branch"）
+#   branch_value: "test"                  # 要部署的分支值——通常为 deploy_branch（如 "test"），不是 feature 分支
 
-## Jira Workflow
+## Jira 工作流
 
-# dev-flow uses the following defaults if this section is omitted:
-#   testing_status: auto-detect (looks for 'Test'/'测试' in available transitions)
+# dev-flow 在未配置本段时使用下列默认值：
+#   testing_status: 自动检测（在可用流转里找含 'Test'/'测试' 的状态）
 #   auto_creates_sub: true
-#   sub_completion_status: auto-detect (looks for 'Done'/'完成' in available transitions)
-#   testing_note_template: built-in 5-field template (Change overview, Affected modules, Testing highlights, Prerequisites, Verification steps)
+#   sub_completion_status: 自动检测（找含 'Done'/'完成' 的状态）
+#   testing_note_template: 内置 5 字段模板（变更概述 / 影响模块 / 测试要点 / 前置条件 / 验证步骤）
 #
-# Override if your Jira uses non-standard status names:
+# Jira 用了非标准状态名时覆盖：
 # jira_workflow:
 #   testing_status: "In Testing"
 #   auto_creates_sub: true
@@ -83,24 +82,24 @@ git:
 #     Prerequisites: <setup needed>
 #     Verification steps: <how to verify>
 
-## Database MCP
+## 数据库 MCP
 
-# Map MCP tool names from your ~/.claude/settings.json mcpServers
+# MCP 工具名取自 ~/.claude/settings.json 的 mcpServers
 databases:
-  main: { mcp: "mcp__your-db-name__mysql_query", desc: "Main database" }
-  # tenant_a: { mcp: "mcp__tenant-a__mysql_query", desc: "Tenant A" }
+  main: { mcp: "mcp__your-db-name__mysql_query", desc: "主数据库" }
+  # tenant_a: { mcp: "mcp__tenant-a__mysql_query", desc: "租户 A" }
 
-## Test Environments
+## 测试环境
 
-# Sensitive credentials — add to .gitignore or use env variables
+# 敏感凭证——加入 .gitignore 或用环境变量
 test_environments:
   default:
     url: "http://your-test-env.example.com"
-    account: ""   # Fill in your test account
-    password: ""  # Fill in your test password
-    desc: "Default test environment"
+    account: ""   # 填测试账号
+    password: ""  # 填测试密码
+    desc: "默认测试环境"
 
-## E2E Testing
+## E2E 测试
 
 e2e_testing:
   approach: "browser_run_code_unsafe"
@@ -116,23 +115,23 @@ e2e_testing:
 
 ---
 
-## Build Commands (agents reference these)
+## 构建命令（agent 参考）
 
 build_commands:
-  frontend: "npm run build"  # Command when frontend files change
-  backend: ""               # Usually not needed for PHP projects
+  frontend: "npm run build"  # 前端文件变更时执行的命令
+  backend: ""               # PHP 项目通常不需要
 
-## Migration (Stage 2 backend development reference)
+## Migration（Stage 2 后端开发参考）
 
 migration:
   steps:
     - "php artisan migrate --force"
-    - "php artisan tenancy:migrate --force"  # If multi-tenant
-  note: "Run only when migration files are created/modified"
+    - "php artisan tenancy:migrate --force"  # 多租户时
+  note: "仅当 migration 文件新建/修改时执行"
 
-## Deployment Checklist
+## 部署清单
 
-- [ ] Confirm git branch
-- [ ] Frontend build (if frontend changed)
-- [ ] Database migration (if migration changed)
-- [ ] Route cache clear (if routes changed)
+- [ ] 确认 git 分支
+- [ ] 前端构建（若改了前端）
+- [ ] 数据库 migration（若改了 migration）
+- [ ] 路由缓存清理（若改了路由）

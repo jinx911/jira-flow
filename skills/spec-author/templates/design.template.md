@@ -1,16 +1,16 @@
 # Design: {spec_name}
 
-## Architecture Decisions (mandatory non-empty for Complex)
-| Decision | Rationale | Alternatives considered |
+## 架构决策（复杂需求强制非空）
+| 决策 | 理由 | 备选方案 |
 |---|---|---|
-| <decision> | <why> | <what else, why not> |
+| <决策> | <为何> | <其他方案及为何不选> |
 
-## Key Files
-| File | Intended change |
+## 关键文件
+| 文件 | 打算怎么改 |
 |---|---|
-| <path> | <what changes here> |
+| <路径> | <此处改动内容> |
 
-## Reuse Points
-- <existing implementation to reuse/extend> — <how>
+## 复用点
+- <可复用/扩展的现有实现> —— <如何复用>
 
-<!-- Conditional engineering sections (Data Model / API Contract / Interface Boundaries / State & Flow / Error Contract) appended from proposal or expanded here per triggers -->
+<!-- 条件工程章节（数据模型 / API 契约 / 接口边界 / 状态与流程 / 错误契约）从 proposal 追加，或按触发条件在此展开 -->

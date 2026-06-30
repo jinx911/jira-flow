@@ -1,8 +1,8 @@
-# Breakpoint Recovery
+# 断点恢复
 
-When dev-flow detects `{root_path}/.dev-flow/{issue_key}-state.json`, follow this flow.
+dev-flow 检测到 `{root_path}/.dev-flow/{issue_key}-state.json` 时，按本流程处理。
 
-## Minimal State Shape
+## 最小 state 结构
 
 ```json
 {
@@ -23,71 +23,71 @@ When dev-flow detects `{root_path}/.dev-flow/{issue_key}-state.json`, follow thi
 }
 ```
 
-## Field Reference
+## 字段说明
 
-| Field | Purpose |
+| 字段 | 用途 |
 |---|---|
-| `flow_mode` | `jira` or `free`; determines which steps are skipped (free mode skips Jira wrap-up) |
-| `current_stage` | Current stage (1-4) |
+| `flow_mode` | `jira` 或 `free`；决定跳过哪些步骤（free 模式跳过 Jira 收尾） |
+| `current_stage` | 当前阶段（1-4） |
 | `complexity` | `simple` / `medium` / `complex` |
-| `spec_name` | Spec directory name under `{changes_path}` (Stage 1 output) |
-| `branch` | Development branch (Stage 2 output) |
-| `doc_version` | Spec version counter; increments on each spec-delta |
-| `spec_deltas[]` | Log of mid-dev spec changes (`{stage, reason, classification, at}`) |
-| `stage_results` | Gate Summary text per stage (recovery context) |
-| `spawned_agents` | Agents expected during recovery |
+| `spec_name` | `{changes_path}` 下的 spec 目录名（阶段 1 产出） |
+| `branch` | 开发分支（阶段 2 产出） |
+| `doc_version` | spec 版本号；每次 spec-deta 自增 |
+| `spec_deltas[]` | 开发中文档变更日志（`{stage, reason, classification, at}`） |
+| `stage_results` | 每阶段 Gate 摘要文本（恢复上下文用） |
+| `spawned_agents` | 恢复时预期存在的 agent |
 
-## Persistence Timing
+## 持久化时机
 
-- Gate pass → write `stage_results[current_stage]`, next `current_stage`, `updated_at`
-- spec-delta → `doc_version++`, append `spec_deltas[]`
-- Agent completion → no heartbeat tracking (TaskList is the source of truth)
+- Gate 通过 → 写 `stage_results[current_stage]`、下一 `current_stage`、`updated_at`
+- spec-delta → `doc_version++`、追加 `spec_deltas[]`
+- agent 完成 → 不追心跳（TaskList 为唯一事实源）
 
 ---
 
-## Unified Retry Limits
+## 统一重试上限
 
-| Exception | Self-repair limit | After limit |
+| 异常 | 自修复上限 | 超限后 |
 |---|---:|---|
-| Build failure | 2 | Ask user |
-| Test bug loop | 3 | Ask user |
-| Requirement/design revision (spec-delta) | 2 | Ask user whether to abort |
-| Task conflict | 1 resequence | Leader decides serialization/worktree |
-| Agent unresponsive | 1 ping | Ask user (wait / skip / spawn replacement) |
-| Agent context exhaustion | 1 replacement approval | Ask user |
-| MCP failure | 2 retries | Save state, stop |
+| 构建失败 | 2 | 问用户 |
+| 测试 bug 循环 | 3 | 问用户 |
+| 需求/设计修订（spec-delta） | 2 | 问用户是否终止 |
+| 任务冲突 | 1 次重排 | Leader 决定串行化/worktree |
+| Agent 无响应 | 1 次 ping | 问用户（等待/跳过/spawn 替补） |
+| Agent 上下文耗尽 | 1 次替补审批 | 问用户 |
+| MCP 故障 | 2 次重试 | 存状态，停止 |
 
-Any exception exceeding its limit escalates to the user.
-
----
-
-## Recovery Procedure
-
-1. Read `{issue_key}-state.json`.
-2. Ask: resume or delete state and restart?
-3. If resuming, ask which agents to re-spawn.
-4. Re-spawn only confirmed agents; inject `stage_results` + `spec_deltas` + on-disk deliverables.
-5. Resume from `current_stage`:
-   - `1` → `spec-author` (re-read existing proposal/design; finish missing sections)
-   - `2` → `dev-loop` (inspect TaskList + `git log` to find completed work; continue)
-   - `3` → `review-test` (confirm code state, then run review/verify)
-   - `4` → `ship` (confirm push/deploy/Jira state, finish missing steps)
-6. If `spec_deltas` is non-empty, replay the latest doc state before resuming coding.
-7. After Stage 4 completes, delete the state file.
-
-## Crash Recovery
-
-- `current_stage < 2`: resume directly from saved deliverables.
-- `current_stage == 2`: inspect TaskList + `git log --oneline -20` + `git status`; re-spawn dev if needed.
-- `current_stage >= 3`: confirm code state on branch, then resume the current stage.
+任何异常超上限必须升级到用户。
 
 ---
 
-## Legacy Compatibility (`.jira-flow/*-state.json`)
+## 恢复流程
 
-For state files written by the previous `jira-flow` version:
-- Map `current_phase` (1-6) → `current_stage` (1-4): phase 1→1, phase 2→2, phase 3→2, phase 4→3, phase 5→3, phase 6→4.
-- Ignore `phase1_substep`, `agent_context_snapshots`, `agent_heartbeats`, `jira_quality_score`, `quality_score` (no longer used).
-- Carry over `spec_name`, `branch`, `complexity`, `user_answers` as-is.
-- Set `doc_version = 1`, `spec_deltas = []` if absent.
-- If the legacy flow was mid-Phase-1 scoring, ask the user whether to restart Stage 1 with the new checklist Gate.
+1. 读 `{issue_key}-state.json`。
+2. 问：恢复还是删状态重启？
+3. 恢复则问要 re-spawn 哪些 agent。
+4. 只 re-spawn 确认的 agent；注入 `stage_results` + `spec_deltas` + 磁盘交付物。
+5. 从 `current_stage` 恢复：
+   - `1` → `spec-author`（重读现有 proposal/design；补齐缺失章节）
+   - `2` → `dev-loop`（查 TaskList + `git log` 找已完成项；继续）
+   - `3` → `review-test`（确认代码状态，再审查/验证）
+   - `4` → `ship`（确认推送/部署/Jira 状态，补齐缺失步骤）
+6. `spec_deltas` 非空时，恢复编码前先回放最新文档状态。
+7. 阶段 4 完成后删除 state 文件。
+
+## 崩溃恢复
+
+- `current_stage < 2`：直接从已存交付物恢复。
+- `current_stage == 2`：查 TaskList + `git log --oneline -20` + `git status`；必要时 re-spawn dev。
+- `current_stage >= 3`：确认分支代码状态，再恢复当前阶段。
+
+---
+
+## 旧版兼容（`.jira-flow/*-state.json`）
+
+对旧 jira-flow 版本写入的 state 文件：
+- `current_phase`（1-6）→ `current_stage`（1-4）映射：phase 1→1、2→2、3→2、4→3、5→3、6→4。
+- 忽略 `phase1_substep`、`agent_context_snapshots`、`agent_heartbeats`、`jira_quality_score`、`quality_score`（不再使用）。
+- `spec_name`、`branch`、`complexity`、`user_answers` 原样保留。
+- 缺 `doc_version` 则设为 1，`spec_deltas` 设为 `[]`。
+- 若旧流程卡在 Phase 1 打分中途，问用户是否用新 checklist Gate 重启阶段 1。

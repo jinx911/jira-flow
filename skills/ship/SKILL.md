@@ -1,39 +1,39 @@
 ---
 name: ship
-description: Use when finalizing a dev branch: run full tests, strip debug code, commit and push, then optionally merge to deploy_branch, trigger Jenkins, and do Jira wrap-up (jira mode). Reusable by bugfix-flow. Independently invocable.
+description: 定稿开发分支时使用：跑全量测试、清 debug 代码、提交推送，再可选地合并到 deploy_branch、触发 Jenkins、做 Jira 收尾（jira 模式）。可被 bugfix-flow 复用。可独立调用。
 ---
 
-# Ship: Finalize + Deploy + Jira
+# Ship：收尾 + 部署 + Jira
 
-## 1. Finalize
-backend-developer: run the FULL test suite, remove debug code (console.log/dd/dump/var_dump), commit and push the branch (push branch only — MR is created manually by the user).
+## 1. 定稿
+backend-developer：跑**全量**测试、清 debug 代码（console.log/dd/dump/var_dump）、提交并推送分支（只推送分支——MR 由用户手动创建）。
 
-## 2. Deploy merge (optional)
-If `deploy_branch` is configured: checkout deploy_branch → pull → merge {branch} → push → checkout {branch}. Purpose: trigger auto-deploy to the test env. Skip if not configured.
+## 2. 部署合并（可选）
+配置了 `deploy_branch` 才做：checkout deploy_branch → pull → merge {branch} → push → checkout {branch}。目的：触发自动部署到测试环境。未配置则跳过。
 
-## 3. Jenkins (optional)
-Only if `jenkins` config AND Jenkins MCP both present. AskUserQuestion to confirm params → `mcp__jenkins__jenkins_build_and_watch` (poll_interval 15, timeout_seconds 600). On failure: retrieve log via `jenkins_get_build_log`, ask user retry (≤2) / skip / abort.
+## 3. Jenkins（可选）
+仅当 `jenkins` 配置 + Jenkins MCP 都在。AskUserQuestion 确认参数 → `mcp__jenkins__jenkins_build_and_watch`（poll_interval 15、timeout_seconds 600）。失败：用 `jenkins_get_build_log` 取日志，问用户重试（≤2）/ 跳过 / 中止。
 
-## 4. Jira wrap-up (jira mode only)
-- `getTransitionsForJiraIssue` → transition main issue to testing status (triggers auto sub-issue creation).
-- `searchJiraIssuesUsingJql` (`parent = {issue_key} ORDER BY created DESC`) → find auto-created sub-issues.
-- For each testing-note sub-issue: fill notes (project-config `testing_note_template`: change overview / affected modules / testing highlights / prerequisites / verification steps) → transition to completion status.
-- Skip test-plan sub-issues (QA handles them).
-- free mode: skip this step entirely.
+## 4. Jira 收尾（仅 jira 模式）
+- `getTransitionsForJiraIssue` → 主单流转到测试状态（触发自动建子单）。
+- `searchJiraIssuesUsingJql`（`parent = {issue_key} ORDER BY created DESC`）→ 找自动建的子单。
+- 对每个提测说明类子单：填说明（project-config `testing_note_template`：变更概述 / 影响模块 / 测试要点 / 前置条件 / 验证步骤）→ 流转到完成状态。
+- 测试计划类子单跳过（由 QA 处理）。
+- free 模式：整步跳过。
 
-If requirements-analyst is unresponsive, the Leader may perform Jira MCP operations directly (no business code involved).
+requirements-analyst 无响应时，Leader 可直接做 Jira MCP 操作（不涉及业务代码）。
 
-## Driven by
-Orchestrator spawns: backend-developer (finalize + deploy); requirements-analyst or Leader (Jira wrap-up). Role expertise embedded here; `~/.claude/agents/*.md` NOT read.
+## 驱动的 agent
+编排器 spawn：backend-developer（定稿 + 部署）；requirements-analyst 或 Leader（Jira 收尾）。角色专长内嵌本 skill，**不读** `~/.claude/agents/*.md`。
 
 ## Gate 4
-- [ ] Branch pushed
-- [ ] deploy_branch merged (if configured)
-- [ ] Jenkins succeeded or skipped (if configured)
-- [ ] Jira updated (jira mode)
+- [ ] 分支已推送
+- [ ] deploy_branch 已合并（若配置）
+- [ ] Jenkins 成功或跳过（若配置）
+- [ ] Jira 已更新（jira 模式）
 
 ## Dependencies
-- Skills: git-ops
-- Agents (embedded): backend-developer, requirements-analyst
-- MCP: jenkins (optional), atlassian-rovo (jira mode)
-- Plugin: superpowers (finishing-a-development-branch)
+- Skills：git-ops
+- Agents（内嵌）：backend-developer、requirements-analyst
+- MCP：jenkins（可选）、atlassian-rovo（jira 模式）
+- Plugin：superpowers（finishing-a-development-branch）

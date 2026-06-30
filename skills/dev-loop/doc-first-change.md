@@ -1,21 +1,21 @@
-# Doc-First Change Protocol
+# 文档优先变更协议
 
-When a developer discovers a requirement gap or error during implementation, the spec is updated BEFORE code. Docs are a living contract, not frozen artifacts.
+开发者实现中发现需求缺口或错误时，先改文档再改代码。文档是活契约，不是冻结产物。
 
-## Steps
-1. **Pause coding.** Label the discovery a `spec-delta`.
-2. **Update the spec first** — edit the relevant section of `proposal.md` / `design.md` / `tasks.md`. Mark the change inline:
-   `> [SPEC-DELTA vN] reason: <why the original was wrong/missing>`
-3. **Classify impact** (developer proposes in the report; Leader confirms):
-   - **Scope-changing** — adds/removes/alters an acceptance criterion or affected module → Leader opens a **mini-Gate** with the user to confirm.
-   - **Clarification-only** — resolves ambiguity without changing scope → log and proceed (no user gate).
-4. **Update state** — `doc_version++`, append to `spec_deltas[]` (`{stage, reason, classification, at}`).
-5. **Resume coding** against the updated doc.
+## 步骤
+1. **暂停编码。** 把发现标记为 `spec-delta`。
+2. **先改文档** —— 编辑 `proposal.md` / `design.md` / `tasks.md` 的相关章节。在改动处标注：
+   `> [SPEC-DELTA vN] 原因: <原描述为何错/缺>`
+3. **判断影响**（dev 在报告里给建议，Leader 确认）：
+   - **范围性** —— 新增/删除/改动了验收标准或影响模块 → Leader 拉**用户 mini-Gate** 确认。
+   - **澄清性** —— 不改范围，只消歧 → 记录后继续（无需用户 gate）。
+4. **更新 state** —— `doc_version++`，追加 `spec_deltas[]`（`{stage, reason, classification, at}`）。
+5. **按更新后的文档继续编码。**
 
-## Why
-- Keeps docs and code in sync — no drift.
-- Makes mid-dev requirement changes visible and reviewable instead of silent.
-- The flow is no longer forward-only: code reality writes back to the spec.
+## 为何
+- 文档与代码始终同步——不脱节。
+- 开发中的需求变更变可见、可评审，而非悄悄改。
+- 流程不再单向：代码现实回写文档。
 
-## Limits
-- Requirement/design revision retry limit: 2 (then ask user whether to abort). See `dev-flow/resume.md`.
+## 上限
+- 需求/设计修订重试上限：2 次（再问用户是否终止）。见 `dev-flow/resume.md`。

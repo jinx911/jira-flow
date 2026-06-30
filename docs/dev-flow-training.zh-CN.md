@@ -1,6 +1,8 @@
-[English](jira-flow-training.md) | **中文**
+> ⚠️ **状态：** Dev-Flow 已从旧的 6 阶段 jira-flow 重构为**薄编排器 + 4 个子 skill**（`spec-author` → `dev-loop` → `review-test` → `ship`）。下方命名已更新；后续章节的逐阶段详解为旧版内容，正在刷新。当前架构见顶层 [README](../README.zh-CN.md)。
 
-# Jira-Flow 培训指南
+[English](dev-flow-training.md) | **中文**
+
+# Dev-Flow 培训指南
 
 > 全链路 Agent Team 开发工作流 — 从 Jira Issue 到代码提交
 
@@ -8,9 +10,9 @@
 
 ## 1. 概述
 
-### 什么是 Jira-Flow？
+### 什么是 Dev-Flow？
 
-Jira-Flow 是一个 Claude Code Skill，自动化执行从 Jira Issue 到代码提交的完整开发流程。它通过 Hub-and-Spoke 模式协调多个 AI Agent，以 6 个 Phase + 6 个 Gate 的结构完成：
+Dev-Flow 是一个 Claude Code Skill，自动化执行从 Jira Issue 到代码提交的完整开发流程。它通过 Hub-and-Spoke 模式协调多个 AI Agent，以 6 个 Phase + 6 个 Gate 的结构完成：
 
 ```
 Jira Issue → 需求分析 → 架构设计 → 任务规划 → TDD开发 → 代码评审 → 测试验证 → 提交推送
@@ -43,7 +45,7 @@ Jira Issue → 需求分析 → 架构设计 → 任务规划 → TDD开发 → 
                     ┌──────────┐
                     │   User   │
                     └────┬─────┘
-                         │ /jira-flow OA-3650
+                         │ /dev-flow OA-3650
                     ┌────▼─────┐
                     │  Leader  │ ← 编排器（不执行任何操作）
                     └────┬─────┘
@@ -100,7 +102,7 @@ Phase 5 前: 创建 tester
 **做什么**:
 1. 前置检查（依赖 skill、superpowers 插件、agent 定义、MCP）
 2. 解析 Jira Issue Key
-3. 加载配置（projects.json → project-config.md → jira-flow config）
+3. 加载配置（projects.json → project-config.md → dev-flow config）
 4. 断点检测（检查是否有未完成的流程）
 5. 选择运行模式（半自动/全自动）
 6. 创建核心团队
@@ -308,14 +310,14 @@ Layer 2: 项目配置
   → 完整项目信息（仓库、数据库、测试环境、构建命令）
 
 Layer 3: 流程配置
-  ~/.claude/skills/jira-flow/project-config.md
-  → jira-flow 工作流配置（root_path、cloudId、分支命名、OpenSpec）
+  ~/.claude/skills/dev-flow/project-config.md
+  → dev-flow 工作流配置（root_path、cloudId、分支命名、OpenSpec）
 ```
 
 ### 查找链
 
 ```
-jira-flow/project-config.md → root_path
+dev-flow/project-config.md → root_path
   → projects.json → 项目名
     → {root_path}/.claude/project-config.md → 完整配置
 
@@ -325,7 +327,7 @@ root_path 为空时: 自动从 projects.json 填充
 ### 关键配置项
 
 ```yaml
-# jira-flow/project-config.md
+# dev-flow/project-config.md
 root_path: ""                    # 留空则从 projects.json 自动填充
 cloudId: ""                      # Atlassian Cloud ID（自动获取）
 branch_naming:
@@ -395,7 +397,7 @@ jira_workflow:                   # Jira 工作流（可选）
 
 ```
 ~/.claude/skills/
-├── jira-flow/
+├── dev-flow/
 │   ├── skill.md                    ← 流程骨架
 │   ├── gate.md                     ← Gate 机制（通过标准 + 摘要格式）
 │   ├── phases/                     ← Phase 指令（按需加载）
@@ -412,7 +414,7 @@ jira_workflow:                   # Jira 工作流（可选）
 ├── create-team/                    ← 团队创建
 ├── delete-team/                    ← 团队清理
 ├── git-ops/                        ← Git 操作
-└── init-jira-flow/                 ← 一键初始化
+└── init-dev-flow/                 ← 一键初始化
 ```
 
 **Lazy Loading 设计**: Leader 只在进入某个 Phase 时才 Read 对应的 phase-N-brief.md，减少上下文占用。
@@ -426,14 +428,14 @@ jira_workflow:                   # Jira 工作流（可选）
 确保以下已就绪：
 - Claude Code CLI
 - superpowers 插件 (v5.0+)
-- 依赖 skills: create-team, delete-team, git-ops, init-jira-flow
+- 依赖 skills: create-team, delete-team, git-ops, init-dev-flow
 - Agent 定义: 7 个 agent 在 `~/.claude/agents/`
 - MCP: atlassian-rovo（必选）, mysql（可选）, playwright（可选）
 
 ### 2. 初始化
 
 ```
-/init-jira-flow
+/init-dev-flow
 ```
 
 一键初始化：自动检测技术栈、生成双份配置、注册项目、验证 MCP 连通性。
@@ -441,12 +443,12 @@ jira_workflow:                   # Jira 工作流（可选）
 ### 3. 运行
 
 ```
-/jira-flow OA-3650
+/dev-flow OA-3650
 ```
 
 或：
 ```
-/jira-flow https://your-domain.atlassian.net/browse/OA-3650
+/dev-flow https://your-domain.atlassian.net/browse/OA-3650
 ```
 
 ### 4. 交互
@@ -467,13 +469,13 @@ A: 关注点分离。Leader 只做协调和决策，所有执行由专门的 Age
 A: Leader 检测冲突后，会使用 worktree 隔离（为每个 Agent 创建独立工作树），避免文件冲突。
 
 **Q: 可以在中途暂停吗？**
-A: 可以。jira-flow 支持断点恢复，状态保存在 `{root_path}/.jira-flow/{issue_key}-state.json`。下次启动同一 Issue 会自动恢复。
+A: 可以。dev-flow 支持断点恢复，状态保存在 `{root_path}/.dev-flow/{issue_key}-state.json`。下次启动同一 Issue 会自动恢复。
 
 **Q: 全自动模式安全吗？**
 A: 全自动模式下，CRITICAL 和 HIGH 级别的问题仍然会升级到用户。Gate 质量检查仍然执行，只是跳过人工确认。超过重试上限也会升级到用户。
 
-**Q: 如何为新项目配置 jira-flow？**
-A: 运行 `/init-jira-flow`，一键自动检测技术栈、生成双份配置、验证 MCP。也可以手动创建 `project-config.md`（参考 `project-config.example.md`）。
+**Q: 如何为新项目配置 dev-flow？**
+A: 运行 `/init-dev-flow`，一键自动检测技术栈、生成双份配置、验证 MCP。也可以手动创建 `project-config.md`（参考 `project-config.example.md`）。
 
 **Q: Superpowers 技能怎么工作？**
-A: 每个 Phase 引用特定的 superpowers 技能。Agent 收到 `[superpowers:xxx]` 标记后，会先 Read 对应的 SKILL.md 获取完整方法论，然后遵循其中的原则执行任务。jira-flow 的 Gate 机制替代了 superpowers 的交互式验证。
+A: 每个 Phase 引用特定的 superpowers 技能。Agent 收到 `[superpowers:xxx]` 标记后，会先 Read 对应的 SKILL.md 获取完整方法论，然后遵循其中的原则执行任务。dev-flow 的 Gate 机制替代了 superpowers 的交互式验证。

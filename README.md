@@ -1,68 +1,68 @@
 **English** | [中文](README.zh-CN.md)
 
-# Jira-Flow: Full-Lifecycle Agent Team Development Workflow
+# Dev-Flow: Full-Lifecycle Agent Team Development Workflow
 
-A [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that orchestrates a multi-agent team to handle the complete development lifecycle from a Jira issue: requirement analysis, design, planning, TDD development, code review, testing, and commit.
+A [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that orchestrates a multi-agent team through the complete development lifecycle — from a Jira issue OR a natural-language requirement — via four reusable sub-skills: spec, dev, review-test, ship.
 
 ```
-Jira Issue → 6 Phases + 6 Gates → Branch Pushed + Jira Updated
+Requirement (Jira key or text) → 4 Stages + 4 Gates → Branch Pushed + Jira Updated
 
-Phase 1: Requirement Analysis   → proposal.md + design.md
-Phase 2: Task Planning + Branch → tasks.md + git branch
-Phase 3: TDD Development        → implementation code
-Phase 4: Code Review            → structured review report
-Phase 5: Test Verification      → evidence-based test report
-Phase 6: Finalization           → commit + Jira update
+Stage 1: Spec        (spec-author)   → proposal.md + design.md (adaptive engineering sections)
+Stage 2: Dev         (dev-loop)      → tasks.md + branch + implementation (conditional TDD)
+Stage 3: Review-Test (review-test)   → review + verify + fix loop
+Stage 4: Ship        (ship)          → push + deploy + Jira wrap-up
 ```
 
-Each Phase ends with a **Gate** — a checkpoint where the Leader summarizes the Phase output for your confirmation before proceeding. Two modes available: **Semi-auto** (default, you confirm each Gate) or **Full-auto** (Gates auto-pass, only exceptions escalate).
+Each Stage ends with a **Gate** (a checklist the Leader presents for your confirmation). Two modes: **Semi-auto** (default, confirm each Gate) or **Full-auto** (Gates auto-pass, only exceptions escalate).
 
 ## Architecture
 
-- **Leader** (your main Claude session) coordinates, decides, and routes — never executes directly
-- **Hub-and-Spoke** communication: all agent messages go through the Leader
-- **7 specialized agents** are spawned on-demand across the lifecycle
-- **Superpowers methodology** integrated at each Phase (TDD, code review, debugging, etc.)
+- **Leader** (your main Claude session) coordinates, decides, routes — never executes directly (keeps its context clean)
+- **Thin orchestrator + 4 sub-skills**: each stage is an independently invocable skill (`/spec-author`, `/review-test`, `/ship` can run standalone)
+- **Hub-and-spoke** communication: all agent messages route through the Leader
+- **Role expertise lives inside sub-skills** — dev-flow does NOT depend on `~/.claude/agents/*.md`
+- **Living docs**: spec-deltas update the docs before code when requirements change mid-dev
+- **Conditional TDD**: TDD only for logic-bearing work; scaffolding/config skip it
+
+## What's new vs the old jira-flow
+
+| Was (jira-flow, 6 phases) | Now (dev-flow, 4 stages) |
+|---|---|
+| Double self-scoring rubric | Structural doc template + checklist Gate (no self-score) |
+| Frozen Phase 1-2 docs | Living docs (doc-first change protocol) |
+| TDD everywhere | Conditional TDD (per-unit test strategy) |
+| 6-step Prompt Build per spawn | Pre-resolved prompt files; spawn = read + `Agent()` |
+| ack / `[URGENT-NOACK]` / 3-level health detection | TaskList as source of truth; one ping → ask user |
+| Depended on agent definition files | Decoupled; role expertise embedded in sub-skills |
 
 ## Prerequisites
 
 | Dependency | Version | How to install |
 |------------|---------|----------------|
 | **Claude Code CLI** | latest | [Official docs](https://docs.anthropic.com/en/docs/claude-code) |
-| **superpowers** plugin | >= 5.0.0 | [superpowers repo](https://github.com/nicekid1/superpowers) — provides 8 methodology skills (TDD, brainstorming, debugging, etc.) |
-| **atlassian-rovo** MCP | any | Configure in `~/.claude/settings.json` → `mcpServers` — [MCP quickstart](https://docs.anthropic.com/en/docs/claude-code/mcp) |
-| **playwright** MCP | any (optional) | For E2E testing in Phase 5 |
+| **superpowers** plugin | >= 5.0.0 | [superpowers repo](https://github.com/nicekid1/superpowers) |
+| **atlassian-rovo** MCP | any | Required for jira mode; not needed in free-flow mode |
+| **jenkins** MCP | any (optional) | For auto-deploy in Stage 4 |
+| **playwright** MCP | any (optional) | For E2E testing in Stage 3 |
 
-### Agent definitions
+### Agent definitions (optional)
 
-This repo includes 21 agent definitions. jira-flow uses 7 core agents:
-
-| Agent | Phase(s) | Purpose |
-|-------|----------|---------|
-| `requirements-analyst` | 1, 6 | Reads Jira issue, generates OpenSpec proposal, handles Jira finalization |
-| `architect` | 1 | Generates design.md with architecture decisions |
-| `planner` | 2 | Breaks design into bite-sized TDD tasks |
-| `backend-developer` | 2, 3, 6 | Creates branch, implements backend code |
-| `frontend-developer` | 3, 6 | Implements frontend code (spawned if design involves frontend) |
-| `code-reviewer` | 4 | Reviews all branch changes with severity-graded report |
-| `tester` | 5 | Runs unit/integration/E2E tests, reports bugs with evidence |
-
-Additional agents (reviewers, optimizers, etc.) are available for standalone use outside jira-flow.
+This repo includes agent definitions, but **dev-flow does not read them** — role expertise is embedded in each sub-skill. They remain available for standalone use outside dev-flow.
 
 ## Installation
 
 ```bash
 # 1. Clone
-git clone https://github.com/jinx911/jira-flow.git
-cd jira-flow
+git clone https://github.com/jinx911/dev-flow.git
+cd dev-flow
 
-# 2. Install (symlinks skills + agents into ~/.claude/)
+# 2. Install (symlinks skills into ~/.claude/)
 chmod +x install.sh
 ./install.sh
 
 # 3. Verify
-ls ~/.claude/skills/jira-flow/      # Should show skill.md, phases/, etc.
-ls ~/.claude/agents/requirements-analyst.md  # Should exist
+ls ~/.claude/skills/dev-flow/        # Should show SKILL.md, gate.md, ...
+ls ~/.claude/skills/spec-author/     # 4 sub-skills present
 ```
 
 ### Uninstall
@@ -78,107 +78,98 @@ This removes the symlinks. Your cloned repo is preserved.
 ### Step 1: Initialize your project
 
 ```
-/init-jira-flow
+/init-dev-flow
 ```
 
-One-command setup — auto-detects tech stack, generates both config files (flow + project), registers project, verifies MCP connectivity.
+One-command setup — auto-detects tech stack, generates config files, registers the project, verifies connectivity.
 
-Or manually: copy `skills/jira-flow/project-config.example.md` to `<your-project>/.claude/project-config.md` and fill in your values.
+Or manually: copy `skills/dev-flow/project-config.example.md` to `<your-project>/.claude/project-config.md` and fill in values.
 
-### Step 2: Run jira-flow
+### Step 2: Run dev-flow
 
-```
-/jira-flow OA-3650
-```
-
-Or with a full URL:
+**Jira mode** (requires a Jira issue key):
 
 ```
-/jira-flow https://your-domain.atlassian.net/browse/OA-3650
+/dev-flow OA-3650
 ```
+
+**Free-flow mode** (no Jira ticket needed):
+
+```
+/dev-flow Add CSV export feature for user management
+```
+
+Free-flow mode skips Jira-dependent steps (Jira wrap-up) and uses your natural-language description directly as the requirement source.
 
 ### Step 3: Review Gates and iterate
 
-The Leader will present a summary at each Gate. In semi-auto mode (default), confirm to proceed. In full-auto mode, Gates pass automatically — only exceptions pause for your input.
+The Leader presents a checklist summary at each Gate. In semi-auto (default), confirm to proceed; in full-auto, Gates pass automatically — only exceptions pause for your input.
 
 ## Configuration
 
 ```
-~/.claude/configs/projects.json                  ← Global index (path → name mapping)
+~/.claude/configs/projects.json                  ← Global index (path → name)
 <project-root>/.claude/project-config.md         ← Project config (repos, DBs, envs)
-~/.claude/skills/jira-flow/project-config.md     ← Flow config (root_path, cloudId, branch naming)
+~/.claude/skills/dev-flow/project-config.md      ← Flow config (root_path, cloudId, branch naming)
 ```
 
 Lookup chain:
-1. Read `jira-flow/project-config.md` → get `root_path`
+1. Read `dev-flow/project-config.md` → get `root_path`
 2. Read `projects.json` → match `root_path` → get project name
 3. Read `{root_path}/.claude/project-config.md` → get full project config
 
-See [`skills/jira-flow/project-config.example.md`](skills/jira-flow/project-config.example.md) for all available fields.
+See [`skills/dev-flow/project-config.example.md`](skills/dev-flow/project-config.example.md) for all fields.
 
 ## File Structure
 
 ```
-jira-flow/
-├── README.md                     ← This file
-├── LICENSE                       ← MIT
-├── CONTRIBUTING.md               ← Contribution guidelines
-├── install.sh                    ← One-command installer
-├── uninstall.sh                  ← Clean uninstaller
+dev-flow/
 ├── skills/
-│   ├── jira-flow/                ← Main skill (6-phase lifecycle)
-│   │   ├── skill.md              ← Flow skeleton + initialization
-│   │   ├── gate.md               ← Gate mechanism + pass criteria
-│   │   ├── phases/               ← Phase instructions (lazy-loaded)
-│   │   │   ├── phase-1-brief.md  ← Requirement analysis
-│   │   │   ├── jira-quality-rubric.md ← Jira requirement quality scoring
-│   │   │   ├── quality-rubric.md ← Proposal quality scoring rubric
-│   │   │   ├── phase-2-brief.md  ← Task planning + branch creation
-│   │   │   ├── phase-3-brief.md  ← TDD development
-│   │   │   ├── phase-4-brief.md  ← Code review
-│   │   │   ├── phase-5-brief.md  ← Test verification
-│   │   │   └── phase-6-brief.md  ← Finalization
-│   │   ├── team-rules.md         ← Team communication rules
-│   │   ├── resume.md             ← Breakpoint recovery logic
-│   │   └── project-config.example.md  ← Config template
-│   ├── init-jira-flow/           ← Project initialization skill
-│   ├── create-team/              ← Team creation (Hub-and-Spoke)
-│   ├── delete-team/              ← Team cleanup
-│   └── git-ops/                  ← Multi-repo git operations
-└── agents/                       ← 21 agent definitions
-    ├── requirements-analyst.md
-    ├── architect.md
-    ├── planner.md
-    ├── backend-developer.md
-    ├── frontend-developer.md
-    ├── code-reviewer.md
-    ├── tester.md
-    └── ... (14 more specialized agents)
+│   ├── dev-flow/                ← Thin orchestrator (Leader playbook)
+│   │   ├── SKILL.md             ← Stages, Gates, delegation, state
+│   │   ├── gate.md              ← Checklist Gate definitions
+│   │   ├── team-rules.md        ← Slim comm rules + Health
+│   │   ├── resume.md            ← Breakpoint recovery
+│   │   └── project-config.example.md
+│   ├── spec-author/             ← Stage 1: requirement → proposal + design
+│   │   ├── SKILL.md
+│   │   ├── triggers.md          ← Trigger → required engineering section
+│   │   └── templates/           ← proposal / design templates
+│   ├── dev-loop/                ← Stage 2: tasks + branch + TDD + doc-first change
+│   │   ├── SKILL.md
+│   │   └── doc-first-change.md
+│   ├── review-test/             ← Stage 3: review + verify + fix loop
+│   │   └── SKILL.md
+│   ├── ship/                    ← Stage 4: finalize + deploy + Jira
+│   │   └── SKILL.md
+│   ├── init-dev-flow/           ← Project initialization
+│   ├── create-team/             ← Team creation (hub-and-spoke)
+│   ├── delete-team/             ← Team cleanup
+│   └── git-ops/                 ← Multi-repo git operations
+└── agents/                      ← Optional agent definitions (NOT read by dev-flow)
 ```
 
 ## Dependencies
 
 | Type | Required | Details |
 |------|----------|---------|
-| **Skills** | create-team, delete-team, git-ops, init-jira-flow | Bundled in this repo |
-| **Plugin** | superpowers >= 5.0.0 | 8 methodology skills |
-| **Agents** | 7 core (21 total bundled) | Installed by `install.sh` |
-| **MCP** | atlassian-rovo | Jira/Confluence operations |
-| **MCP** | playwright | Optional, for E2E testing |
-| **MCP** | mysql/postgres | Optional, for database verification |
+| **Skills** | create-team, delete-team, git-ops, init-dev-flow, spec-author, dev-loop, review-test, ship | Bundled |
+| **Plugin** | superpowers >= 5.0.0 | Methodology skills |
+| **Agents** | none required | Role expertise embedded in sub-skills; bundled agents optional |
+| **MCP** | atlassian-rovo | Jira/Confluence ops (jira mode) |
+| **MCP** | jenkins, playwright | Optional (deploy / E2E) |
+| **MCP** | mysql/postgres | Optional (database verification) |
 
 ## Superpowers Integration
 
-Each Phase references a superpowers skill. Agents read the full skill at runtime:
+Each sub-skill references a superpowers skill, loaded at runtime:
 
-| Phase | Skill | Key Constraint |
-|-------|-------|----------------|
-| 1 | brainstorming | 2-3 solutions + trade-off + self-review |
-| 2 | writing-plans | Bite-sized tasks + TDD steps + zero placeholders |
-| 3 | test-driven-development + executing-plans | RED → Verify → GREEN → Verify → REFACTOR |
-| 4 | requesting-code-review | git diff structured review + severity levels |
-| 5 | verification-before-completion | Evidence-first: command → output → conclusion |
-| 6 | finishing-a-development-branch | Full test suite → clean debug code → push |
+| Stage | Sub-skill | Skill |
+|---|---|---|
+| 1 | spec-author | brainstorming |
+| 2 | dev-loop | test-driven-development + executing-plans |
+| 3 | review-test | requesting-code-review + verification-before-completion |
+| 4 | ship | finishing-a-development-branch |
 
 ## Exception Handling
 
@@ -186,8 +177,8 @@ Each Phase references a superpowers skill. Agents read the full skill at runtime
 |-----------|---------------|------------|
 | Build failure | 2 retries | Ask user |
 | Test bug fix loop | 3 cycles | Ask user |
-| Requirement/design issue | 2 re-Gates | Ask user to terminate? |
-| Task conflict | 1 replan | Leader serializes or worktree |
+| Requirement/design revision (spec-delta) | 2 | Ask user whether to abort |
+| Task conflict | 1 replan | Leader serializes or uses worktree |
 | Agent no response | 1 ping | Ask user |
 | MCP connection lost | 2 retries | Save state, resume later |
 
@@ -195,11 +186,13 @@ All exceptions exceeding limits escalate to the user. No infinite retries.
 
 ## Core Principles
 
-- **Leader never executes** — only coordinates, decides, and routes
-- **Hub-and-Spoke communication** — all agent messages go through Leader
-- **Gate checkpoints** — each Phase ends with user confirmation
+- **Leader never executes** — only coordinates, decides, routes (context stays clean)
+- **Hub-and-spoke** — all agent messages route through Leader
+- **Checklist Gates** — each Stage ends with user confirmation
+- **Living docs** — spec-deltas update docs before code
+- **Conditional TDD** — TDD only when the work has testable logic
 - **Evidence-based verification** — no claims without supporting evidence
-- **Breakpoint recovery** — state saved after each Phase, resume anytime
+- **Breakpoint recovery** — state saved per Stage, resume anytime
 
 ## License
 

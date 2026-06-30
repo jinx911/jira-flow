@@ -40,13 +40,13 @@ digraph {
 
 ### 模式 B：编程式（其他 skill 调用）
 
-当其他 skill（如 `/jira-flow`）需要创建团队时，跳过交互步骤，直接传入配置：
+当其他 skill（如 `/dev-flow`）需要创建团队时，跳过交互步骤，直接传入配置：
 
 **判断条件**：如果 `$ARGUMENTS` 中包含预定义的团队配置（JSON 格式），则进入编程式模式。
 
 **传入格式示例**：
 ```
-/create-team {"team_name":"jira-flow-OA-3650","roles":[{"name":"requirements-analyst","agent":"requirements-analyst"},{"name":"architect","agent":"architect"},{"name":"planner","agent":"planner"},{"name":"backend-dev","agent":"backend-developer"},{"name":"frontend-dev","agent":"frontend-developer"},{"name":"code-reviewer","agent":"code-reviewer"}],"custom_prompt":"<自定义 prompt 内容，替代 Worker Prompt 模板>"}
+/create-team {"team_name":"dev-flow-OA-3650","roles":[{"name":"requirements-analyst","agent":"requirements-analyst"},{"name":"architect","agent":"architect"},{"name":"planner","agent":"planner"},{"name":"backend-dev","agent":"backend-developer"},{"name":"frontend-dev","agent":"frontend-developer"},{"name":"code-reviewer","agent":"code-reviewer"}],"custom_prompt":"<自定义 prompt 内容，替代 Worker Prompt 模板>"}
 ```
 
 **编程式流程**：

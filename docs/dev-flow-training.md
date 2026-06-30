@@ -1,6 +1,8 @@
-**English** | [中文](jira-flow-training.zh-CN.md)
+> ⚠️ **Status:** Dev-Flow has been refactored from the legacy 6-phase jira-flow into a **thin orchestrator + 4 sub-skills** (`spec-author` → `dev-loop` → `review-test` → `ship`). Naming below is updated; the detailed per-phase walkthrough in later sections is legacy detail being refreshed. For the current architecture, see the top-level [README](../README.md).
 
-# Jira-Flow Training Guide
+**English** | [中文](dev-flow-training.zh-CN.md)
+
+# Dev-Flow Training Guide
 
 > Full-lifecycle Agent Team development workflow — from Jira Issue to code commit
 
@@ -8,9 +10,9 @@
 
 ## 1. Overview
 
-### What is Jira-Flow?
+### What is Dev-Flow?
 
-Jira-Flow is a Claude Code Skill that automates the complete development workflow from a Jira Issue to code commit. It coordinates multiple AI Agents via a Hub-and-Spoke pattern through 6 Phases + 6 Gates:
+Dev-Flow is a Claude Code Skill that automates the complete development workflow from a Jira Issue to code commit. It coordinates multiple AI Agents via a Hub-and-Spoke pattern through 6 Phases + 6 Gates:
 
 ```
 Jira Issue → Requirement Analysis → Architecture Design → Task Planning → TDD Development → Code Review → Test Verification → Commit & Push
@@ -43,7 +45,7 @@ Jira Issue → Requirement Analysis → Architecture Design → Task Planning �
                     ┌──────────┐
                     │   User   │
                     └────┬─────┘
-                         │ /jira-flow OA-3650
+                         │ /dev-flow OA-3650
                     ┌────▼─────┐
                     │  Leader  │ ← Orchestrator (never executes operations)
                     └────┬─────┘
@@ -100,7 +102,7 @@ Before Phase 5: Create tester
 **What happens**:
 1. Prerequisite checks (dependency skills, superpowers plugin, agent definitions, MCP)
 2. Parse Jira Issue Key
-3. Load configuration (projects.json → project-config.md → jira-flow config)
+3. Load configuration (projects.json → project-config.md → dev-flow config)
 4. Breakpoint detection (check for unfinished workflows)
 5. Select running mode (semi-auto / full-auto)
 6. Create core team
@@ -308,14 +310,14 @@ Layer 2: Project Config
   → Full project info (repos, databases, test environments, build commands)
 
 Layer 3: Flow Config
-  ~/.claude/skills/jira-flow/project-config.md
-  → jira-flow workflow config (root_path, cloudId, branch naming, OpenSpec)
+  ~/.claude/skills/dev-flow/project-config.md
+  → dev-flow workflow config (root_path, cloudId, branch naming, OpenSpec)
 ```
 
 ### Lookup Chain
 
 ```
-jira-flow/project-config.md → root_path
+dev-flow/project-config.md → root_path
   → projects.json → project name
     → {root_path}/.claude/project-config.md → full config
 
@@ -325,7 +327,7 @@ When root_path is empty: auto-fill from projects.json
 ### Key Configuration Fields
 
 ```yaml
-# jira-flow/project-config.md
+# dev-flow/project-config.md
 root_path: ""                    # Empty = auto-fill from projects.json
 cloudId: ""                      # Atlassian Cloud ID (auto-detected)
 branch_naming:
@@ -395,7 +397,7 @@ Each Phase references a Superpowers methodology skill. Agents read the correspon
 
 ```
 ~/.claude/skills/
-├── jira-flow/
+├── dev-flow/
 │   ├── skill.md                    ← Flow skeleton
 │   ├── gate.md                     ← Gate mechanism (pass criteria + summary format)
 │   ├── phases/                     ← Phase instructions (lazy-loaded)
@@ -412,7 +414,7 @@ Each Phase references a Superpowers methodology skill. Agents read the correspon
 ├── create-team/                    ← Team creation
 ├── delete-team/                    ← Team cleanup
 ├── git-ops/                        ← Git operations
-└── init-jira-flow/                 ← One-command initialization
+└── init-dev-flow/                 ← One-command initialization
 ```
 
 **Lazy Loading Design**: Leader only reads phase-N-brief.md when entering that Phase, minimizing context usage.
@@ -426,14 +428,14 @@ Each Phase references a Superpowers methodology skill. Agents read the correspon
 Ensure the following are ready:
 - Claude Code CLI
 - superpowers plugin (v5.0+)
-- Dependency skills: create-team, delete-team, git-ops, init-jira-flow
+- Dependency skills: create-team, delete-team, git-ops, init-dev-flow
 - Agent definitions: 7 agents in `~/.claude/agents/`
 - MCP: atlassian-rovo (required), mysql (optional), playwright (optional)
 
 ### 2. Initialize
 
 ```
-/init-jira-flow
+/init-dev-flow
 ```
 
 One-command setup: auto-detect tech stack, generate both configs, register project, verify MCP connectivity.
@@ -441,12 +443,12 @@ One-command setup: auto-detect tech stack, generate both configs, register proje
 ### 3. Run
 
 ```
-/jira-flow OA-3650
+/dev-flow OA-3650
 ```
 
 Or:
 ```
-/jira-flow https://your-domain.atlassian.net/browse/OA-3650
+/dev-flow https://your-domain.atlassian.net/browse/OA-3650
 ```
 
 ### 4. Interact
@@ -467,13 +469,13 @@ A: Separation of concerns. Leader only coordinates and decides; all execution is
 A: Leader detects conflicts and uses worktree isolation (creating independent working trees for each Agent) to avoid file conflicts.
 
 **Q: Can I pause mid-workflow?**
-A: Yes. jira-flow supports breakpoint recovery. State is saved in `{root_path}/.jira-flow/{issue_key}-state.json`. Restarting the same Issue will auto-resume.
+A: Yes. dev-flow supports breakpoint recovery. State is saved in `{root_path}/.dev-flow/{issue_key}-state.json`. Restarting the same Issue will auto-resume.
 
 **Q: Is full-auto mode safe?**
 A: In full-auto mode, CRITICAL and HIGH issues still escalate to the user. Gate quality checks still execute — they just skip manual confirmation. Over-limit retries also escalate to the user.
 
-**Q: How do I configure jira-flow for a new project?**
-A: Run `/init-jira-flow` for one-command auto-detection of tech stack, config generation, and MCP verification. You can also manually create `project-config.md` (see `project-config.example.md`).
+**Q: How do I configure dev-flow for a new project?**
+A: Run `/init-dev-flow` for one-command auto-detection of tech stack, config generation, and MCP verification. You can also manually create `project-config.md` (see `project-config.example.md`).
 
 **Q: How do Superpowers skills work?**
-A: Each Phase references a specific superpowers skill. When an Agent receives a `[superpowers:xxx]` tag, it first reads the corresponding SKILL.md for the full methodology, then follows those principles. jira-flow's Gate mechanism replaces superpowers' interactive verification.
+A: Each Phase references a specific superpowers skill. When an Agent receives a `[superpowers:xxx]` tag, it first reads the corresponding SKILL.md for the full methodology, then follows those principles. dev-flow's Gate mechanism replaces superpowers' interactive verification.

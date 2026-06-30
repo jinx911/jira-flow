@@ -1,13 +1,7 @@
----
-partOf: jira-flow
-version: 1.0.0
-description: Project configuration example template. Open-source users reference this file to manually create <project-root>/.claude/project-config.md.
----
-
 # Project Config Example
 
 > This file is an example template for project configuration.
-> In practice, `/init-jira-flow` auto-generates it at `<project-root>/.claude/project-config.md`.
+> In practice, `/init-dev-flow` auto-generates it at `<project-root>/.claude/project-config.md`.
 > Alternatively, manually copy this file and fill in actual values.
 
 ---
@@ -15,7 +9,7 @@ description: Project configuration example template. Open-source users reference
 ## OpenSpec
 
 openspec:
-  changes_path: "openspec/changes"      # jira-flow work output directory (relative to root_path)
+  changes_path: "openspec/changes"      # dev-flow work output directory (relative to root_path)
   baseline_path: "openspec/specs"       # System baseline docs (optional, leave empty to skip baseline correlation checks)
 
 ## Basic Info
@@ -53,11 +47,25 @@ git:
 
 # If your project auto-deploys from a specific branch (e.g., "test" → staging):
 # deploy_branch: "test"
-# If omitted, Phase 6 will skip the merge-to-deploy-branch step.
+# If omitted, Stage 4 will skip the merge-to-deploy-branch step.
+
+## Jenkins Deploy (optional)
+
+# If your project has a Jenkins CI/CD pipeline, configure this section to auto-deploy
+# after Stage 4 branch finalization. If omitted or if Jenkins MCP is unavailable,
+# the deploy step is silently skipped — no warning, no error.
+#
+# jenkins:
+#   job_name: "oa-service"               # Jenkins job name (required if jenkins section is present)
+#   default_params:                       # Default parameters for the build
+#     deploy_type: "api"
+#     test_version: "kn"
+#   branch_param: "oa_branch"             # Parameter name that receives the branch name (default: "oa_branch")
+#   branch_value: "test"                  # Branch value to deploy — typically the deploy_branch (e.g. "test"), NOT the feature branch
 
 ## Jira Workflow
 
-# jira-flow uses the following defaults if this section is omitted:
+# dev-flow uses the following defaults if this section is omitted:
 #   testing_status: auto-detect (looks for 'Test'/'测试' in available transitions)
 #   auto_creates_sub: true
 #   sub_completion_status: auto-detect (looks for 'Done'/'完成' in available transitions)
@@ -114,7 +122,7 @@ build_commands:
   frontend: "npm run build"  # Command when frontend files change
   backend: ""               # Usually not needed for PHP projects
 
-## Migration (Phase 3 backend development reference)
+## Migration (Stage 2 backend development reference)
 
 migration:
   steps:

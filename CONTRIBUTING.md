@@ -46,7 +46,3 @@ All skills follow the official Claude Code Agent Skill standard:
 - Include the sub-skill or agent role involved
 - Share the relevant error/exception if available
 - Note your environment: Claude Code version, superpowers version, MCP servers configured
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.

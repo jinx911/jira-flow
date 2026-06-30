@@ -193,7 +193,3 @@ All exceptions exceeding limits escalate to the user. No infinite retries.
 - **Conditional TDD** — TDD only when the work has testable logic
 - **Evidence-based verification** — no claims without supporting evidence
 - **Breakpoint recovery** — state saved per Stage, resume anytime
-
-## License
-
-[MIT](LICENSE)

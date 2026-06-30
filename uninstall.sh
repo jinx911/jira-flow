@@ -1,5 +1,5 @@
 #!/bin/bash
-# jira-flow uninstaller — removes symlinks created by install.sh
+# dev-flow uninstaller — removes symlinks created by install.sh
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -55,5 +55,5 @@ echo ""
 echo "Skills removed: $REMOVED_SKILLS"
 echo "Agents removed: $REMOVED_AGENTS"
 echo ""
-info "jira-flow uninstalled. Your cloned repo is still at $SCRIPT_DIR"
+info "dev-flow uninstalled. Your cloned repo is still at $SCRIPT_DIR"
 echo "  Remove it manually if desired: rm -rf $SCRIPT_DIR"

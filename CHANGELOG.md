@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **主动调度工具箱 + 代码质量契约**：子 agent 主动调用已装 skill（auto-select，不写注册表）；dev-loop 强制去冗余/覆盖/风格契约；review-test 显式审查矩阵（security-review/database-reviewer/performance-optimizer）。Java 按市场主流 + `java-coding-standards`，不沿用历史。
+- **commit 收口**：开发期不 commit，ship 时一个需求一个大 commit（中文 message + Issue 号）+ 崩溃兜底。
+- **文档归并**：每需求 `proposal/design/tasks` + lessons 归并到 `{root_path}/.dev-flow/{issue_key}/spec/`，全中文；旧 `openspec/changes/` 只读兼容。
+- **分支命名**：`{type}/{issue_key}`（feat/fix/refactor/chore…），type 推断 + `branch_naming.type_map` 覆盖。
 - **Renamed jira-flow → dev-flow** (full rename: main skill, init skill, `.dev-flow` state dir, team name, README/repo title). "jira mode" retained as a mode name.
 - **Restructured into a thin orchestrator + 4 reusable sub-skills**: `spec-author`, `dev-loop`, `review-test`, `ship` (6 phases → 4 stages). Each sub-skill is independently invocable.
 - **Adaptive-depth docs**: structural proposal/design templates with engineering sections (data model / API contract / interface boundaries / state-flow / error contract / test strategy) expanded by triggers; checklist Gate replaces the double self-scoring rubric.

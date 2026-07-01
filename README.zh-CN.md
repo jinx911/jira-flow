@@ -35,6 +35,15 @@ Stage 4: 收尾     (ship)          → 推送 + 部署 + Jira 收尾
 | ack / `[URGENT-NOACK]` / 3 级健康探测 | TaskList 为唯一事实源；一次 ping → 问用户 |
 | 依赖 agent 定义文件 | 解耦；角色专长内嵌子 skill |
 
+## 代码质量与工具（v2）
+
+- **主动调度工具箱**：子 agent 像正常会话一样主动调用已装 skill（`/simplify`、`/code-review`、`/security-review`、`/test-coverage`、`/build-fix`、各栈 reviewer、UI 类…）——新装工具自动接入，dev-flow 零改动。
+- **强制质量契约**（dev-loop）：GREEN 后必做去冗余 + 可读性 pass；`/test-coverage` ≥80%；函数<50 行、文件<800 行、注释写"为什么"。
+- **风格权威**：非 Java 跟仓库现有风格；**Java 按市场主流 + `java-coding-standards` agent，不沿用历史**；各栈 `*-coding-standards` agent 为最终权威。
+- **分支**：`{type}/{issue_key}`（如 `feat/OA-3650`、`fix/OA-3650`）。
+- **提交**：开发期不 commit，ship 时**一个需求一个大 commit**（中文 message + Issue 号）。
+- **文档**：每需求归并到 `.dev-flow/{issue_key}/spec/`，全中文。
+
 ## 前置条件
 
 | 依赖 | 版本 | 安装方式 |

@@ -395,4 +395,10 @@ A：不是。按单元 `test_strategy` 决定：`tdd`/`regression` 才走 TDD，
 A：dev-flow 不读它们。可留作其他场景独立使用，也可删除，不影响 dev-flow。
 
 **Q：dev-flow 怎么"自我学习"？**
-A：`learn` 子 skill 闭环——每次 run 结束 `capture` 记信号（Gate 失败 / spec-delta / 重试升级 / 用户纠正）到 `.dev-flow/lessons/`；`distill` 把稳定的沉淀进项目 `knowledge.md`（自动）和全局 `playbook.md`（自动），skill 结构升级走 diff 审核；下次 run `apply` 把相关经验注入对应 agent。手动 `/dev-flow learn <note>` 随时教一条；`/dev-flow learn --upgrade` 触发提炼。
+A：`learn` 子 skill 闭环——每次 run 结束 `capture` 记信号（Gate 失败 / spec-delta / 重试升级 / 用户纠正）到 `.dev-flow/{key}/lessons-*.jsonl`；`distill` 把稳定的沉淀进项目 `knowledge.md`（自动）和全局 `playbook.md`（自动），skill 结构升级走 diff 审核；下次 run `apply` 把相关经验注入对应 agent。手动 `/dev-flow learn <note>` 随时教一条；`/dev-flow learn --upgrade` 触发提炼。
+
+**Q：代码风格/质量怎么保证？**
+A：① 子 agent 主动调用已装工具（simplify/code-review/security-review/test-coverage/各栈 reviewer…），auto-select；② dev-loop 强制质量契约（GREEN 后去冗余 + 覆盖 ≥80% + 函数<50 行 + 注释写"为什么"）；③ 风格权威——非 Java 跟仓库现有，Java 按市场主流 + `java-coding-standards` agent（**不沿用历史**），各栈 `*-coding-standards` agent 为最终权威。
+
+**Q：什么时候 commit？分支怎么命名？**
+A：开发期不 commit（改动累积工作树），ship 时**一个需求一个大 commit**（中文 message + Issue 号）。分支格式 `{type}/{issue_key}`（feat/fix/refactor/chore…，type 由 issue type 或需求文本推断，可在 project-config 覆盖）。

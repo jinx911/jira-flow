@@ -20,7 +20,7 @@ warn(){ echo -e "${YELLOW}[WARN]${NC} $1"; }
 err(){  echo -e "${RED}[ERROR]${NC} $1"; }
 
 # 默认同步 dev-flow 全家桶；--all 追加依赖 skill
-DEFAULT_SKILLS=(dev-flow init-dev-flow spec-author dev-loop review-test ship learn git-ops)
+DEFAULT_SKILLS=(dev-flow init-dev-flow spec-author dev-loop review-test ship learn git-ops bugfix-flow)
 EXTRA_SKILLS=(create-team delete-team git-ops)
 
 # 某些 skill 含 per-user 生成文件（不在仓库），同步时必须保留

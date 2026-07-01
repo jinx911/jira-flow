@@ -28,8 +28,8 @@ description: 当用户提供 Jira issue key/URL（jira 模式）或自然语言�
 ## 学习闭环（learn）
 
 `learn` 子 skill 在两点自动触发：
-- **Stage 0**（预生成 prompt 之后）：调 `learn apply` → 读 `{root_path}/.dev-flow/knowledge.md` → 挑相关条目 → 注入对应子 skill 的 prompt 文件。
-- **Stage 4**（Gate 4 通过后）：调 `learn capture` → 把本次 run 信号写入 `{root_path}/.dev-flow/lessons/{issue_key}-{HHmm}.jsonl`，`lessons_captured++`。
+- **Stage 0**（预生成 prompt 之后）：调 `learn apply` → 读 `{root_path}/.dev-flow/knowledge.md` → 挑相关条目 → 注入**当前阶段**子 skill 的 prompt 文件（其它阶段在进入前再注入）。
+- **Stage 4**（Gate 4 通过后）：调 `learn capture` → 把本次 run 信号写入 `{root_path}/.dev-flow/{issue_key}/lessons-{HHmm}.jsonl`，`lessons_captured++`。
 - **distill 提醒**：`lessons_captured` 每 ≥5 时，编排器在 Stage 4 收尾后**提醒**（不自动跑）"建议执行 `/dev-flow learn --upgrade`"；distill 流程见 `learn/distill-protocol.md`。
 
 手动：`/dev-flow learn <note>` → capture 一条 manual_note；`/dev-flow learn --upgrade` → distill（见 `learn/SKILL.md`）。
@@ -107,7 +107,7 @@ spec 文档目录：`{root_path}/.dev-flow/{issue_key}/spec/`（v2 归并；旧 
 
 ### 2. 预生成 prompt + 建团队
 1. 替换变量 → 为每阶段写 `.dev-flow/{issue_key}/prompts/{stage}.md`
-2. 调 `learn apply`，把返回的"相关经验"块注入对应阶段 prompt 文件（spec-author / dev-loop / review-test）
+2. 调 `learn apply`：Stage 0 只把经验注入**当前阶段（spec-author）**的 prompt 文件；dev-loop / review-test 的经验在各自 Stage 开始前再注入（那时才生成它们的 prompt）。
 3. `/create-team`，`team_name: "dev-flow-{issue_key}"`，角色见 Dependencies
 
 ## 健康与恢复

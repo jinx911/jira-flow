@@ -133,9 +133,9 @@ Repository architecture:
 {repo_architecture}
 
 OpenSpec directories:
-  Work output: {changes_path}
+  Work output: {root_path}/.dev-flow/{issue_key}/spec/（v2：本需求 spec 产出，全中文；proposal/design/tasks 均在此）
+  Legacy（只读）: {changes_path}（旧 openspec/changes，仅参考）
   System baseline: {baseline_path}（存在时引用相关 baseline 约束）
-  Reference existing spec format: 从工作输出目录读现有 proposal.md / design.md / tasks.md。
 
 Tech stack:
   Backend: {backend_stack}

@@ -11,7 +11,7 @@ description: 从 spec 开始实现时使用。产出 tasks.md（每个单元标�
 3. **实现** —— dev agent 按单元的测试策略执行。
 
 ## 驱动的 agent
-编排器 spawn：planner → backend-developer / frontend-developer。角色专长内嵌本 skill，**不读** `~/.claude/agents/*.md`（仅读各栈 `*-coding-standards` 作风格权威，见下）。
+编排器 spawn：planner → backend-developer / frontend-developer。角色专长内嵌本 skill，**不读** `~/.claude/agents/*.md`；风格权威见下"风格对齐"。
 
 ## 工具使用
 你已安装的全部 skill / agent 都可用，主动选与任务相关的调用，不要重造轮子：

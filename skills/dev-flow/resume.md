@@ -81,7 +81,9 @@ dev-flow 检测到 `{root_path}/.dev-flow/{issue_key}-state.json` 时，按本�
 6. `spec_deltas` 非空时，恢复编码前先回放最新文档状态。
 7. 阶段 4 完成后删除 state 文件。
 
-> 注：`learn` 的数据（`.dev-flow/lessons/` 与 `knowledge.md`）独立于 state.json，断点恢复不影响它们；恢复后若需提炼经验，手动 `/dev-flow learn --upgrade`。
+> 注：`learn` 的数据（`.dev-flow/{key}/lessons-*.jsonl` 与 `knowledge.md`）独立于 state.json，断点恢复不影响它们；恢复后若需提炼经验，手动 `/dev-flow learn --upgrade`。
+
+> 路径兼容：新 spec 在 `{root_path}/.dev-flow/{issue_key}/spec/`；旧 `openspec/changes/{spec_name}/` 只读兼容。
 
 ## 崩溃恢复
 

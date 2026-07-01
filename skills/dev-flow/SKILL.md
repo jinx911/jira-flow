@@ -83,6 +83,8 @@ Stage: [✅1][✅2][🔄3][·4]  {issue_key} | Branch: {branch} | Complexity: {c
 
 ## 配置
 
+spec 文档目录：`{root_path}/.dev-flow/{issue_key}/spec/`（v2 归并；旧 `openspec/changes/` 只读兼容）。
+
 查找链：
 1. `~/.claude/skills/dev-flow/project-config.md`
 2. `~/.claude/configs/projects.json`

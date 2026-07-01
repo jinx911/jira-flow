@@ -39,8 +39,9 @@ backend: { main_repo: "." }
 git:
   main_branch: "master"  # 或 "main"
   branch_naming:
-    format: "{issue_key}"
-    types: [feature, fix, refactor]
+    format: "{type}/{issue_key}"                       # v2：默认带类型前缀
+    type_map: { "Story": "feat", "Task": "feat", "Bug": "fix" }  # Jira issue type → type（可选；free-flow 按需求文本推断）
+    types: [feat, fix, refactor, chore]
   commit_format: "<type>(<scope>): <description>"
 
 ## 部署分支（可选）

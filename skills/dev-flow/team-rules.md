@@ -13,9 +13,9 @@ Leader 在写每阶段 prompt 文件前替换下列变量：
 | `{issue_key}` / `{key}` | dev-flow 输入：jira 模式为 Jira key，free-flow 模式为生成 slug |
 | `{root_path}` | dev-flow/project-config.md |
 | `{repo_architecture}` | 由 project-config.md 的 backend/frontend/modules 构造 |
-| `{changes_path}` | project-config.md → openspec.changes_path |
+| `{changes_path}` | project-config.md → openspec.changes_path（**v2：spec 文档改用 `{root_path}/.dev-flow/{issue_key}/spec/`；此变量仅旧 openspec 只读兼容**） |
 | `{baseline_path}` | project-config.md → openspec.baseline_path |
-| `{spec_name}` | 阶段 1 产出 |
+| `{spec_name}` | 阶段 1 产出（v2 仍返回；产出目录以 issue_key 为准） |
 | `{branch}` | 阶段 2 产出 |
 | `{repo_path}` / `{backend_repo_path}` | project-config.md → backend.main_repo |
 | `{frontend_repo_path}` | project-config.md → frontend.repo_path |

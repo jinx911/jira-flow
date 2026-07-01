@@ -37,10 +37,10 @@ GREEN 后、验证通过前（本阶段不 commit）：
 
 ## 风格对齐
 按 project-config 的 tech_stack.backend 判断：
-- java / spring → 按市场主流规范（Spring Boot 社区），**不沿用仓库历史风格**；以 ~/.claude/agents/java-coding-standards.md 为权威
+- java / spring → 按市场主流规范（Spring Boot 社区），**不沿用仓库历史风格**；调用 `java-coding-standards` skill（已装，市场主流 Spring 规范，作为权威）
 - 其他栈 → 跟目标仓库现有代码风格
-- 任何栈：存在 ~/.claude/agents/<栈>-coding-standards.md 时，以其为最终权威
-- 无对应 coding-standards agent：Java→Spring 社区主流；其他→跟仓库现有
+- 任何栈：存在对应 `<栈>-coding-standards` skill/agent 时（已装即经"工具使用"自动调），以其为最终权威
+- 无对应 coding-standards：Java→Spring 社区主流；其他→跟仓库现有
 
 ## 条件化 TDD（非必要不用）
 按单元的 `test_strategy` 标签决定纪律：

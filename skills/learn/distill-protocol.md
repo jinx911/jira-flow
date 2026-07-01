@@ -6,7 +6,7 @@ distill = 把累积信号提炼成"经验沉淀 + skill 升级提议"。由 `/de
 
 spawn 一个临时 curator agent（general-purpose）：
 
-1. **读**：本项目全部 `{root_path}/.dev-flow/lessons/*.jsonl` + 现有 `knowledge.md` + 全局 `playbook.md`
+1. **读**：本项目全部 `{root_path}/.dev-flow/*/lessons-*.jsonl` + 现有 `knowledge.md` + 全局 `playbook.md`
 2. **聚类**：按 signal 类型 + detail 关键词聚类，识别重复 ≥2 次的模式
 3. **分类落地**（按分级安全）：
    - **项目事实**（该项目专属）→ 更新 `{root_path}/.dev-flow/knowledge.md`（自动）
@@ -25,5 +25,5 @@ spawn 一个临时 curator agent（general-purpose）：
 ## 去重 / 精简 / 归档
 
 - `knowledge.md` / `playbook.md` 超 200 行：distill 合并重复、删过时（保留每类最近 N 条）
-- `lessons/*.jsonl` 超 30 天归档到 `lessons/archive/`（不删，可查）
+- `lessons` 超 30 天归档（移到 `.dev-flow/archive/` 或删，不删可查）
 - 找不到新模式 → no-op，不刷屏

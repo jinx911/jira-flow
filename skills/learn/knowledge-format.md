@@ -19,7 +19,7 @@
 - `detail`：≤2 句描述
 - `source`：auto（dev-flow 自动捕获）/ user（`/dev-flow learn` 手动）
 
-文件名：`{root_path}/.dev-flow/lessons/{issue_key}-{HHmm}.jsonl`（每次 run 一个文件，append-only）。
+文件名：`{root_path}/.dev-flow/{issue_key}/lessons-{HHmm}.jsonl`（每次 run 一个文件，append-only，归并到该需求目录）。
 
 ## knowledge.md 结构（项目级）
 
@@ -49,4 +49,4 @@
 
 - 每条 knowledge/playbook 条目带 `> source: <issue> @ <ISO>, signal: <type>`。
 - `knowledge.md` / `playbook.md` 超 200 行：distill 合并重复、删过时（保留每类最近 N 条）。
-- `lessons/*.jsonl` 超 30 天归档到 `lessons/archive/`（不删，可查）。
+- `lessons` 超 30 天归档（移到 `.dev-flow/archive/` 或删，不删可查）。

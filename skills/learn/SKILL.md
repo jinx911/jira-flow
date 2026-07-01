@@ -30,7 +30,7 @@ dev-flow 的第 5 个子 skill，独占"捕获→沉淀→应用→提炼"。让
 
 ## capture
 
-- 文件：`{root_path}/.dev-flow/lessons/{issue_key}-{HHmm}.jsonl`（append-only，每行一条 JSON）
+- 文件：`{root_path}/.dev-flow/{issue_key}/lessons-{HHmm}.jsonl`（append-only，每行一条 JSON）
 - 时机：编排器在 ship 的 Gate 4 通过后调用
 - 数据源：扫描本次 run 的 `stage_results` + `spec_deltas` + 异常记录
 - state：`lessons_captured++`
@@ -61,7 +61,7 @@ dev-flow 的第 5 个子 skill，独占"捕获→沉淀→应用→提炼"。让
 
 ## 数据文件位置
 
-- 项目层：`{root_path}/.dev-flow/lessons/{key}-{HHmm}.jsonl` + `{root_path}/.dev-flow/knowledge.md`
+- 项目层：`{root_path}/.dev-flow/{issue_key}/lessons-{HHmm}.jsonl` + `{root_path}/.dev-flow/knowledge.md`
 - 全局层：`skills/dev-flow/playbook.md` + skill 结构文件（distill 提议、审核后改）
 
 每条 knowledge/playbook 条目带 `> source: <issue> @ <ISO>, signal: <type>` 溯源；超 200 行由 distill 去重精简。

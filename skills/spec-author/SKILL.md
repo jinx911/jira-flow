@@ -7,14 +7,22 @@ description: 把需求（Jira issue 或自然语言文本）转成结构化 prop
 
 把需求转成工程级的 `proposal.md` + `design.md`，让开发者无需猜测就能实现。
 
+## 工具使用
+你已安装的全部 skill / agent 都可用，主动调用：
+- 接口设计 → api-design
+- 架构/画图 → architect / architecture-diagram
+- 查代码 → codegraph / code-explorer / repo-scan
+- 各栈规范 → 对应 *-coding-standards（作风格权威参考）
+未装时降级。
+
 ## 输入
 - Jira key（jira 模式）或 `{requirement_text}`（free-flow 模式）
 - 触发条件集：由编排器传入，或从代码扫描自检。见 `triggers.md`。
 
 ## 产出
-- `{changes_path}/{spec_name}/proposal.md`
-- `{changes_path}/{spec_name}/design.md`
-- 向 Leader 返回：`spec_name`、简短摘要、使用的触发集
+- `{root_path}/.dev-flow/{issue_key}/spec/proposal.md`
+- `{root_path}/.dev-flow/{issue_key}/spec/design.md`
+- 向 Leader 返回：`spec_name`、简短摘要、使用的触发集（产出目录以 issue_key 为准）
 
 ## 驱动的 agent
 编排器 spawn 本 skill 的 agent：requirements-analyst（核心章节 + 澄清）→ architect（工程章节 + 架构决策）。角色专长内嵌本 skill，**不读** `~/.claude/agents/*.md`。
@@ -51,7 +59,7 @@ description: 把需求（Jira issue 或自然语言文本）转成结构化 prop
 
 pass/fail。无数字分数。无自评循环。
 
-## 模板
+## 模板（中文骨架）
 - `templates/proposal.template.md`
 - `templates/design.template.md`
 

@@ -1,8 +1,7 @@
 ---
 name: performance-optimizer
 description: Multi-language performance analysis and optimization specialist. Use PROACTIVELY for identifying bottlenecks, optimizing slow code, reducing bundle sizes, and improving runtime performance across frontend (React/Vue), backend (PHP/Java/Python/Go/Node), database, and infrastructure layers.
-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: sonnet
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # Performance Optimizer

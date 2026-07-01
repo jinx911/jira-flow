@@ -1,8 +1,7 @@
 ---
 name: build-error-resolver
 description: Multi-language build error resolution specialist. Use PROACTIVELY when any build fails — TypeScript, PHP, Python, Go, Rust, or generic compilation errors. Fixes build errors only with minimal diffs, no architectural edits. For Java-specific builds, use java-build-resolver instead.
-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: sonnet
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # Build Error Resolver (Multi-Language)

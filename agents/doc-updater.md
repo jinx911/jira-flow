@@ -1,8 +1,7 @@
 ---
 name: doc-updater
 description: Multi-language documentation and codemap specialist. Use PROACTIVELY for updating codemaps, API docs, READMEs, and technical documentation. Adapts to project tech stack.
-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: haiku
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # Documentation & Codemap Specialist (Multi-Language)

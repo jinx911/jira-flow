@@ -1,8 +1,7 @@
 ---
 name: tester
 description: QA testing specialist for comprehensive test verification across all stacks — unit, integration, API, and E2E tests. Use for validating completed features against requirements.
-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: sonnet
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # QA Tester (Multi-Language)

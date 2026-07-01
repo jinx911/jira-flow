@@ -5,11 +5,23 @@ description: 审查并验证开发分支时使用。跑结构化代码审查（�
 
 # Review-Test：审查 + 验证 + 修复环
 
+## 工具使用
+你已安装的全部 skill / agent 都可用，主动选与任务相关的调用：
+- 代码审查 → code-review / 对应 *-reviewer（php / typescript / java / ...）
+- 安全 → security-review
+- 数据库 → database-reviewer
+- 性能 → performance-optimizer
+- 架构 → architect
+未装时正常降级。
+
 ## 流程
-1. **审查** —— code-reviewer 按多轮管道审 branch diff：
-   - 第 1 轮 质量（恒过）→ 第 2 轮 架构（≥3 文件或新接口时）→ 第 3 轮 安全（用户输入/认证/数据写入时）。
-   - 每条问题严重级：CRITICAL（阻断）/ HIGH（合并前必修）/ MEDIUM（建议）/ LOW（可选）。
-   - 每条问题：`file:line` + 描述 + 修复建议。
+1. **审查**（多轮，按需调专用工具）：
+   - 质量（恒过，按栈对照 *-coding-standards）：冗余/可读性/注释/风格 adherence
+   - 安全（用户输入/认证/数据写入）→ /security-review
+   - 架构（≥3 文件/新接口）→ architect
+   - 数据库（schema/query 改动）→ database-reviewer
+   - 性能（热点路径）→ performance-optimizer
+   - 每条问题：`file:line` + 描述 + 修复建议；严重级 CRITICAL/HIGH/MEDIUM/LOW
 2. **验证** —— tester 跑单元/集成/E2E + 数据库验证（按 project-config `databases`），证据优先：命令 → 输出摘要 → 退出码。禁止 "should work" / "looks fine"。
 3. **修复环** —— CRITICAL/HIGH 问题 + bug → dev 修复 → 重审/重测。最多 3 轮，再升级用户。
 

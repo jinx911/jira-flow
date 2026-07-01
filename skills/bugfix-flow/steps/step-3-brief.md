@@ -1,218 +1,66 @@
----
-partOf: bugfix-flow
-version: 1.0.0
-description: Step 3 instructions for deployment. Leader reads this file when entering Step 3.
----
+# Step 3：部署
 
-# Step 3: Deploy
+> 目标：一个 bug 一个 commit + push，合并 deploy 分支，Jenkins 部署，更新 Jira。
 
-> **Objective**: Commit changes, merge to deploy branch, trigger Jenkins deployment, and update Jira status.
+## 前置
+- Gate 2 已过，修复确认，测试通过
+- 所有改动未提交在工作树
 
-## Prerequisites
+## 1. 单 commit + push（每仓库）
 
-- Gate 2 has passed — fix is confirmed and tests pass
-- All changes are uncommitted in the working trees of target repos
+委托 backend-developer：调 `/git-ops` 提交并推送。
 
-## 1. Commit + Push (Per Repo)
-
-For each repo in `repos_to_fix`:
-
-Leader delegates to **backend-developer**:
-
-"Invoke `/git-ops` to commit and push the bug fix.
-
-Commit message format:
-  - Jira mode: fix({scope}): {brief fix description}
-
-    Refs {issue_key}"
-  - Free mode: fix({scope}): {brief fix description}"
-
-Repos with changes: {repos_to_fix list}
-Branch: {branch}
-
-`/git-ops` handles:
-- Scanning changed files across repos
-- Presenting change list for confirmation
-- Per-file `git add` (not `git add -A`)
-- Commit with formatted message
-- Push to origin/{branch}
-- Branch protection checks
-- Stash safety if needed"
-
-Leader collects: commit SHA for each repo.
-
-## 2. Merge to Deploy Branch
-
-> **Guard**: Only execute if `deploy_branch` is configured in project-config. If not configured, skip this section.
-
-Leader delegates to **backend-developer**:
-
-"Invoke `/git-ops` to merge the bug fix branch into {deploy_branch}.
-
-Source: {branch} → Target: {deploy_branch}
-Repos: {repos_to_fix list}
-
-`/git-ops` handles:
-- Branch protection checks (merge direction validation)
-- Stash safety before switching branches
-- Checkout deploy_branch → pull → merge → push → checkout back
-- Merge conflict detection — stops immediately on conflict
-- Push confirmation
-
-If any repo has merge conflicts → `/git-ops` will stop and report. Leader then prompts user to resolve manually."
-
-## 3. Jenkins Deploy (Interactive)
-
-> **Config guard**: Only executes if `jenkins` section exists in project-config AND Jenkins MCP (`mcp__jenkins__jenkins_build_and_watch`) is available. If EITHER is missing → skip this section silently.
-
-### 3a. Job Selection
-
-Read project-config → `jenkins` section.
-
-**Single job** (`jenkins.job_name` exists, `jenkins.jobs` does not exist):
-- Use the single job directly
-- Convert to internal format: `jobs = [{ job_name, default_params, branch_param, branch_value }]`
-
-**Multiple jobs** (`jenkins.jobs` array exists):
-- Present all jobs to user for selection
-
-Leader uses AskUserQuestion:
+**一个 bug 一个 commit**（每仓库一个 commit，含本次修复全部改动）。commit message（中文）：
 ```
-## Jenkins Deploy — Select Services
+fix(<scope>): <一句话修复概述>
 
-Bug fix 涉及以下仓库，需要部署对应的服务:
+<1-3 行说明>
 
-  [✓] oa-service  (涉及后端代码)
-  [✓] oa-frontend (涉及前端代码)
-  [ ] oa-platform-php (未改动，跳过)
+Refs {issue_key 或 bug_id}
+```
+`/git-ops` 处理：扫变更、展示清单确认、`git add <具体文件>`（不用 -A）、commit、push origin/{branch}、分支保护、stash 安全。
+Leader 收集每仓库 commit SHA。
 
-确认部署以上服务？（可取消勾选不需要的服务）
+## 2. 合并到 deploy 分支
+
+> 仅配置了 `deploy_branch` 才做，否则跳过。
+
+委托 backend-developer：`/git-ops` 合并 `{branch} → {deploy_branch}`。`/git-ops` 处理分支保护/方向校验、stash、`checkout deploy → pull → merge → push → checkout 回`、冲突即停。冲突 → 停，用户手解。
+
+## 3. Jenkins 部署（交互）
+
+> 仅 `jenkins` 配置 + Jenkins MCP 都在才做，否则静默跳过。
+
+### 3a 任务选择
+单任务（`jenkins.job_name`）直接用；多任务（`jenkins.jobs`）AskUserQuestion 让用户选（按改动仓库勾选服务）。存 `jobs_to_deploy`。
+
+### 3b 参数确认（每任务）
+`jenkins_get_job` 取参数定义 → 合并 `default_params` + `branch_param=branch_value`（通常 test）→ 跳过密码参数。AskUserQuestion 确认/改/跳。
+
+### 3c 触发构建
+`jenkins_build_and_watch`（poll_interval 15、timeout_seconds 600）。
+
+### 3d 结果处理
+成功 → 记 build 号；失败 → `jenkins_get_build_log` 取日志，AskUserQuestion 重试(≤2)/跳过/中止。
+
+### 3e 部署摘要
+```
+| 任务 | Build# | 结果 | 耗时 |
+|---|---|---|---|
 ```
 
-Save selected jobs as `jobs_to_deploy`.
+## 4. Jira 更新（仅 jira 模式）
 
-### 3b. Parameter Confirmation (Per Job)
+> 仅 `issue_key` 非空执行；free 模式跳过。
 
-For each selected job:
+### 4a 加修复评论
+`addCommentToJiraIssue`：根因 / 修复 / 改动文件 / 测试全过 / 部署（deploy_branch + Jenkins build 号）/ 分支。
 
-1. Get job definition: `mcp__jenkins__jenkins_get_job(job_name)`
-2. Parse parameter definitions
-3. Construct parameters by merging:
-   - `jenkins.default_params` (or per-job `default_params`)
-   - `branch_param`: use `branch_value` from config (typically "test")
-   - Password params: skip (use Jenkins defaults)
-
-Leader uses AskUserQuestion:
-```
-## Jenkins Deploy — {job_name}
-
-Parameters:
-  - test_version: kn (Choice: kn / stage / u1)
-  - deploy_type: api (Choice: api / job)
-  - oa_branch: test
-
-Confirm / Modify parameters / Skip this job
-```
-
-Save confirmed parameters per job.
-
-### 3c. Trigger Builds
-
-For each job with confirmed parameters:
-
-Leader delegates to **backend-developer**:
-
-"Trigger Jenkins build:
-- Job: {job_name}
-- Parameters: {confirmed_params}
-- Use mcp__jenkins__jenkins_build_and_watch
-  - job_name: {job_name}
-  - parameters: {params}
-  - poll_interval: 15
-  - timeout_seconds: 600"
-
-### 3d. Build Result Handling
-
-**On success**: Note build number and result.
-
-**On failure**:
-1. Leader retrieves build log: `mcp__jenkins__jenkins_get_build_log(job_name, build_number)`
-2. Leader uses AskUserQuestion: "Jenkins build #{build_number} for {job_name} failed. Log excerpt above. Retry / Skip / Abort?"
-3. Retry → re-trigger (max 2 total attempts per job)
-4. Skip → continue to next job, note failure in Gate 3 summary
-5. Abort → end flow, save state
-
-### 3e. Deploy Summary
-
-```
-## Jenkins Deploy Results
-
-| Job | Build # | Result | Duration |
-|-----|---------|--------|----------|
-| oa-service | 1352 | SUCCESS | 8m 23s |
-| oa-frontend | 550 | SUCCESS | 3m 12s |
-```
-
-## 4. Jira Update (If Applicable)
-
-> **Guard**: Only execute if `issue_key` is non-null (jira mode). Free mode skips this section.
-
-### 4a. Add Fix Comment
-
-Leader adds comment to the bug issue:
-
-```
-mcp__atlassian-rovo__addCommentToJiraIssue(cloudId, issue_key, comment)
-
-Comment body:
-## Bug Fix Applied
-
-**Root Cause**: {step_results.1.root_cause summary}
-**Fix**: {step_results.2.fix summary}
-**Files Changed**: {file list}
-**Tests**: All passed
-**Deployed**: {deploy_branch} via Jenkins (build #{numbers})
-**Branch**: {branch}
-```
-
-### 4b. Transition Status (if sub-task)
-
-If the issue is a sub-task (bug issue created by QA):
-
-1. `mcp__atlassian-rovo__getTransitionsForJiraIssue(cloudId, issue_key)` → find completion transition
-2. `mcp__atlassian-rovo__transitionJiraIssue(cloudId, issue_key, transition)` → move to Done/Completed
-
-If the issue is a regular issue (not sub-task) → skip transition, only add comment.
+### 4b 流转状态（子任务时）
+子任务：`getTransitionsForJiraIssue` → 找完成流转 → `transitionJiraIssue` 到 Done。普通 issue 不流转，仅评论。
 
 ## Gate 3
 
-**Semi-auto**: Present final summary via AskUserQuestion:
-```
-## Bugfix-Flow Complete
-
-Bug: {bug_description}
-Root Cause: {1-line summary}
-
-### Changes:
-{repo}: {N} files (commit {sha})
-{repo}: {N} files (commit {sha})
-
-### Deploy:
-  Merge to {deploy_branch}: ✓
-  Jenkins oa-service: ✓ (build #1352)
-  Jenkins oa-frontend: ✓ (build #550)
-
-### Jira:
-  Comment added to {issue_key}: ✓
-  Status transitioned: ✓
-
-Branch {branch} is ready for MR (MR is created manually by user).
-```
-
-User confirms → cleanup state file.
-
-**Full-auto**: Log the summary, auto-complete.
-
-Update state.json: `current_step = 3`, `step_results.3 = { commits, deploy_results, jira_updated }`.
-
-On Gate 3 pass → delete `{root_path}/.bugfix-flow/{bug_id}-state.json`.
+Semi-auto：AskUserQuestion 展示最终摘要（bug / 根因 / 各仓库 commit SHA / 部署 / Jira）+ "分支 {branch} 可建 MR（MR 手动创建）"。确认 → 删 state 文件。Full-auto：记录自动完成。
+更新 state：`current_step=3`，`step_results.3={commits, deploy_results, jira_updated}`。
+Gate 3 通过 → 删 `{root_path}/.bugfix-flow/{bug_id}-state.json`。

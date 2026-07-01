@@ -1,225 +1,80 @@
 ---
 name: bugfix-flow
-description: Use when fixing bugs reported from test environment or found locally — lightweight 3-step flow for bug analysis, fix, and deploy. Supports both Jira-linked bugs and free-form descriptions.
-version: 1.0.0
-tags: [bugfix, workflow, grafana, jenkins]
-dependencies:
-  skills:
-    - git-ops
-  mcp_servers:
-    - name: atlassian-rovo
-      required: false
-      note: "Required for Jira-linked bugs only"
-    - name: grafana
-      required: false
-      note: "Required for test environment bug analysis"
-    - name: jenkins
-      required: false
-      note: "Required for auto-deploy in Step 3"
-  project_config: true
+description: 修复测试环境或本地发现的 bug 时使用——轻量 3 步流程（bug 分析 → 修复+验证 → 部署）。支持 Jira 关联 bug 和自由描述。可独立调用。
 ---
 
-# Bugfix-Flow: Lightweight Bug Fix Workflow
+# Bugfix-Flow：轻量 Bug 修复流程
 
-**Input**: `$ARGUMENTS` (optional — Jira issue key, or bug description, or empty for full interactive)
+**输入**：`$ARGUMENTS`（可选——Jira issue key、或 bug 描述、或空=全交互）
 
-Mode detection:
-- Matches `^[A-Z]+-\d+$` or contains `/browse/` → **jira mode**
-- Any other text → **free mode** (natural language bug description)
-- Empty → **full interactive mode** (all info collected via AskUserQuestion)
+模式：匹配 `^[A-Z]+-\d+$` 或含 `/browse/` → **jira 模式**；其它文本 → **free 模式**；空 → **全交互模式**。
 
-## Overview
+## 概览
 
 ```
-Pre-flight (interactive)   → 收集 bug 信息 + 定位分支 + 切换
-Step 1: Bug Analysis       → Grafana 日志 + 代码定位 + 修复方案
-Step 2: Fix + Verify       → TDD 修复 + 测试 + spec 追加
-Step 3: Deploy             → commit + merge + Jenkins 部署 + Jira 更新
+Step 0 预检（交互）  → 收集 bug 信息 + 定位分支 + 切换（细节见 references/pre-flight.md）
+Step 1 Bug 分析      → Grafana 日志 + 代码定位 + 修复方案
+Step 2 修复 + 验证   → 回归优先修复 + 按栈测试 + 质量契约
+Step 3 部署          → 单 commit + merge + Jenkins + Jira
 ```
 
-Each Step ends with a **Gate** — a checkpoint where the summary is presented for confirmation.
+每个 Step 结束有 **Gate**（展示摘要待确认）。
 
-## Run Modes
+## 运行模式
 
-| Behavior | Semi-Auto (default) | Full-Auto |
-|----------|---------------------|-----------|
-| Gate | Display summary + AskUserQuestion | Auto-pass, log summary |
-| Exception | All prompt user | Only retry-exceeded prompt user |
-| Grafana | Show logs + confirm analysis | Auto-analyze |
-| Jenkins | Interactive parameter confirmation | Auto-deploy with defaults |
+| 行为 | Semi-auto（默认） | Full-auto |
+|---|---|---|
+| Gate | 展示摘要 + AskUserQuestion | 自动放行，记录 |
+| 异常 | 都问用户 | 仅超限问 |
+| Grafana | 展示日志 + 确认分析 | 自动分析 |
+| Jenkins | 交互确认参数 | 默认自动部署 |
 
-## Leader Constraints
+## Leader 约束
 
-> The Leader (main session) coordinates, makes decisions, and drives state transitions. Execution is delegated to agents via SendMessage.
+Leader（主会话）只协调/决策/驱动状态，执行委托 agent。
 
-**Allowed**: Read, SendMessage, TaskCreate/TaskUpdate, AskUserQuestion, Bash (git operations only)
-**Allowed Write**: Only `{root_path}/.bugfix-flow/{bug_id}-state.json`
-**Forbidden**: Write (business code), Edit, Atlassian MCP write operations (except Jira comment/status in Step 3)
+**允许**：Read、SendMessage、TaskCreate/TaskUpdate、AskUserQuestion、Bash（仅 git 操作）
+**只可写**：`{root_path}/.bugfix-flow/{bug_id}-state.json`
+**禁止**：写业务代码、Edit、Atlassian MCP 写（除 Step 3 的 Jira 评论/状态）
 
-## Step 0: Pre-flight (Interactive)
+## 工具使用
 
-All user input is collected here before any execution begins.
+你已安装的全部 skill / agent 都可用，主动调用：
+- 查日志 → grafana（Loki）
+- 查代码 → codegraph / code-explorer / repo-scan
+- 简化去冗余 → simplify / code-simplifier
+- 测试覆盖 → test-coverage
+- 各栈规范 → 对应 *-coding-standards / *-reviewer
+未装时降级。
 
-### 0.1 Parse + Configure
+## Step 概要
 
-1. **Mode detection** from `$ARGUMENTS`:
-   - Matches `^[A-Z]+-\d+$` or contains `/browse/` → **jira mode**, extract issue key
-   - Any other text → **free mode**, store as `bug_description`
-   - Empty → **full interactive mode**
+进入每步前 Read `steps/step-N-brief.md`（Step 0 读 `references/pre-flight.md`）。每完成一个 agent，Leader 更新 `step_results[N]`。
 
-2. Read `{root_path}/.claude/project-config.md` → get:
-   - `root_path`, `repo_path`, module paths, `deploy_branch`
-   - `jenkins` config (if exists)
-   - `git.branch_naming.format` (default: "{issue_key}")
+| Step | 产出 | Gate |
+|---|---|---|
+| 0 预检 | bug 上下文 + 分支切换 + state | 确认开干 |
+| 1 Bug 分析 | 根因 + 修复方案 | 确认修复方案 |
+| 2 修复 + 验证 | 代码 + 测试结果 | 确认 diff + 测试 |
+| 3 部署 | 单 commit + merge + Jenkins + Jira | 确认部署 |
 
-3. If jira mode:
-   - Read Jira issue via `mcp__atlassian-rovo__getJiraIssue`
-   - If issue is a sub-task → extract parent issue key
-   - Store: `issue_key`, `parent_key`, `jira_summary`, `jira_description`
+## Gate 机制
 
-### 0.2 Collect Bug Context (AskUserQuestion)
+每步后：收集 → 写 `step_results[current_step]` → 展示（semi-auto 确认 / full-auto 自动）→ `current_step++`。
 
-**Q1: Bug Description**
+## 异常处理
 
-- jira mode: Show Jira title + description. Ask: "以上是 Jira 中的 bug 描述，是否需要补充？" + free text field
-- free mode / full interactive: Ask: "请描述 bug 的表现、复现步骤和预期行为"
+| 异常 | 自修复 | 升级 |
+|---|---|---|
+| 修复后测试失败 | dev 自修 ≤2 | 问用户 |
+| Jenkins 构建失败 | 重试 ≤2 | 问用户（重试/跳过/中止） |
+| Grafana MCP 不可用 | 跳过日志分析，报告注明 | 无日志继续 |
+| Agent 无响应 | ping 1 次，等 5 分钟 | 问用户 |
+| 任何 repo 无分支 | — | 问用户手选 |
+| deploy_branch merge 冲突 | — | 停止，用户手解 |
 
-Save response as `bug_description`.
+## Dependencies
 
-**Q2: Environment Source**
-
-Ask: "这个 bug 是哪里发现的？"
-- Option A: 测试环境 (Step 1 会查 Grafana 日志)
-- Option B: 本地开发环境 (跳过 Grafana)
-
-Save as `env_source`: "test" | "local".
-
-**Q3: Trace ID (conditional)**
-
-Only if env_source == "test": "是否有关联的 trace_id 或 request_id？（没有可跳过）"
-- Save as `trace_id` (may be empty)
-
-**Q4: Confirm Branch (多仓库感知)**
-
-Branch lookup priority:
-1. **jira mode + parent issue** → Read `{root_path}/.jira-flow/{parent_key}-state.json` → get `branch` field
-2. **jira mode + no state file** → Derive branch name from parent_key using `branch_naming.format`
-3. **free mode / full interactive** → List all active branches across repos, let user choose
-
-After finding branch name, scan ALL repos in project-config:
-```
-For each repo_path:
-  git -C {repo_path} branch --list {branch_name}
-  → exists → include in checkout list
-  → missing → skip
-```
-
-Present result to user:
-```
-分支 {branch_name} 存在于以下仓库:
-  ✓ oa-service
-  ✓ oa-frontend
-  ✗ oa-platform-php (分支不存在，跳过)
-
-确认在以上仓库切换到 {branch_name}？
-```
-
-Save as `repos_to_fix`: list of `{repo_path, branch}` objects.
-
-**Q5: Run Mode**
-
-Ask: "选择运行模式"
-- Option A: semi-auto (recommended) — 每个 Step 结束后确认
-- Option B: full-auto — 自动执行，异常才提示
-
-Save as `run_mode`: "semi-auto" | "full-auto".
-
-### 0.3 Execute Branch Switch
-
-Delegate to **backend-developer**: invoke `/git-ops` with "更新分支 {branch}" for each repo in `repos_to_fix`.
-
-`/git-ops` handles stash safety, checkout, pull, and conflict detection automatically. Leader provides the repo list so the agent does not need to select repos interactively.
-
-### 0.4 Initialize State
-
-Write `{root_path}/.bugfix-flow/{bug_id}-state.json`:
-
-```json
-{
-  "bug_id": "<slug or issue_key>",
-  "flow_mode": "jira | free",
-  "run_mode": "semi-auto | full-auto",
-  "env_source": "test | local",
-  "bug_description": "<description>",
-  "trace_id": "<trace_id or null>",
-  "issue_key": "<jira key or null>",
-  "parent_key": "<parent jira key or null>",
-  "branch": "<branch_name>",
-  "repos_to_fix": [{"path": "...", "branch": "..."}],
-  "current_step": 0,
-  "step_results": {},
-  "created_at": "<ISO>"
-}
-```
-
-`bug_id` generation:
-- jira mode → issue_key
-- free mode → slug from first 30 chars of description (lowercase, spaces→`-`, strip special chars)
-
-### 0.5 Final Confirmation
-
-Present summary:
-```
-## Bugfix-Flow 准备就绪
-
-Bug: {bug_description}
-来源: 测试环境 / 本地
-分支: {branch} ({repos with this branch})
-模式: {run_mode}
-
-即将执行:
-  Step 1: Bug 分析（Grafana 日志 + 代码定位）
-  Step 2: 修复 + 测试
-  Step 3: 部署（commit + merge + Jenkins + Jira 更新）
-```
-
-Confirm → proceed to Step 1.
-
----
-
-## Step Summary
-
-> When entering a Step, Read `steps/step-N-brief.md`.
-> **Universal rule**: on every agent completion, Leader updates `step_results[N]` in state.json.
-
-| Step | Output | Gate |
-|------|--------|------|
-| 1 Bug Analysis | root cause + fix proposal | Confirm fix approach |
-| 2 Fix + Verify | implementation code + test results | Confirm diff + tests |
-| 3 Deploy | commit + merge + Jenkins + Jira update | Confirm deployment |
-
----
-
-## Gate Mechanism
-
-After each Step:
-
-1. **Collect**: Aggregate agent reports
-2. **Persist**: Write to state.json → `step_results[current_step]`
-3. **Present**:
-   - Semi-auto: Display summary via AskUserQuestion → user confirms/adjusts/aborts
-   - Full-auto: Auto-pass, log summary
-4. **Advance**: `current_step++`
-
----
-
-## Exception Handling
-
-| Exception | Auto-Fix | Escalation |
-|-----------|----------|------------|
-| Test failure after fix | Dev self-fixes ≤2 times | Ask user |
-| Jenkins build failure | Retry ≤2 times | Ask user (retry/skip/abort) |
-| Grafana MCP unavailable | Skip log analysis, note in report | Continue without logs |
-| Agent unresponsive | Ping 1 time, wait 5 min | Ask user |
-| Branch not found in any repo | N/A | Ask user to select manually |
-| Merge conflict during deploy_branch merge | N/A | Stop, prompt user to resolve manually |
+- **Skills**：git-ops
+- **MCP**：atlassian-rovo（jira 模式）、grafana（测试环境分析）、jenkins（Step 3 部署）——均可选
+- **project_config**：是（读 `{root_path}/.claude/project-config.md`）

@@ -1,152 +1,46 @@
----
-partOf: bugfix-flow
-version: 1.0.0
-description: Step 2 instructions for fix implementation and verification. Leader reads this file when entering Step 2.
----
+# Step 2：修复 + 验证
 
-# Step 2: Fix + Verify
+> 目标：按确认方案修复（bug 走回归测试优先），按栈验证，对齐质量契约。**本步不 commit**（统一在 Step 3 单 commit）。
 
-> **Objective**: Implement the confirmed fix with TDD discipline, verify tests pass, and update spec if available.
+## 前置
+- Gate 1 已过，方案已确认
+- 各目标 repo 已在正确分支
+- `step_results.1.fix_proposal` 含确认方案
 
-## Prerequisites
+## 工具使用 + 质量契约 + 风格对齐
 
-- Gate 1 has passed — fix approach is confirmed
-- All target repos are checked out on the correct branch
-- `step_results.1.fix_proposal` contains the confirmed fix plan
+- **工具**：主动用 codegraph / repo-scan 查码、simplify 去冗余、test-coverage 校覆盖、各栈 *-reviewer / *-coding-standards。
+- **质量契约**：函数<50 行、文件<800 行、无深嵌套(>4 层)、显式错误处理、无魔法数字；注释写"为什么"；无 debug 残留（console.log/dd/dump/var_dump）。
+- **风格对齐**：按 tech_stack——Java 走市场主流 + `java-coding-standards`（**不沿用历史**）；其他跟仓库现有；有对应 `<栈>-coding-standards` skill 以其为权威。
+- **DRY**：先搜现有实现复用。
 
-## 1. TDD Fix Implementation
+## 1. 修复实现（回归测试优先）
 
-Leader delegates to **backend-developer** (and **frontend-developer** if frontend changes are involved):
+委托 backend-developer（+ frontend-developer 如涉前端）：按 `step_results.1.fix_proposal` 实现。
 
-"Implement the bug fix following the confirmed approach.
+bug 默认走 **regression** 策略：先写复现 bug 的失败测试（证 bug 存在）→ 最小修复 → 测试通过 → REFACTOR。
+> 若 bug 无法单测（纯 UI/集成），写最小验证脚本并注明原因。
 
-### Confirmed Fix Plan:
-{step_results.1.fix_proposal}
+构建命令：project-config `build_commands`；migration（若需）：`migration.steps`。
+自修：测试失败 → 分析 + 调整 + 重跑，每 repo ≤2 次；仍失败报 Leader。
 
-### Repositories:
-{repos_to_fix}
+## 2. 按栈验证（证据优先：命令 → 输出 → 退出码）
 
-### TDD Discipline:
+- **PHP (Laravel)**：`php artisan test`（Feature + Unit）；API → Feature 测试；DB → 断言行数/字段
+- **Java (Spring)**：`./mvnw test` 或 `gradle test`；Controller → `@WebMvcTest` + MockMvc；JPA → `@DataJpaTest`；纯逻辑 → JUnit5 + AssertJ
+- **前端**：组件测试（vitest/jest）+ 改动相关 E2E（playwright）
+- `/test-coverage` 校验覆盖（regression 单元必须有测试且通过）
+- 跨仓库：各修改仓库相关测试 + 验集成点 + 查 API 契约变更
 
-For each repo that needs changes:
+## 3. Diff 汇总
 
-**RED** — Write a failing test first:
-  - Write a test that reproduces the bug
-  - Run the test — confirm it FAILS (proves the bug exists)
-  - If the bug cannot be reproduced by a unit test (e.g., UI-only, integration issue), write a minimal verification script instead and document why unit testing is infeasible
+各 repo `git -C {repo} diff --stat` + `diff`，汇总跨仓库变更。
 
-**GREEN** — Write minimal code to fix:
-  - Implement the fix as described in the proposal
-  - Run the test — confirm it PASSES
+## 4. spec 更新（可选）
 
-**REFACTOR** — Clean up:
-  - Review the fix for clarity and consistency with surrounding code
-  - Run the test again — still passes
-
-### Build Commands:
-  Backend: {project-config → build_commands.backend}
-  Frontend: {project-config → build_commands.frontend}
-
-### Migration (if needed):
-  {project-config → migration.steps}
-
-### Self-Fix Rules:
-- If a test fails after fix attempt: analyze error, adjust fix, re-run. Up to 2 self-fix attempts per repo.
-- If still failing after 2 attempts: report back to Leader with error details.
-
-### Code Quality Checklist:
-- [ ] No debug statements (console.log, dd(), dump(), var_dump, etc.)
-- [ ] No commented-out code related to the fix
-- [ ] Error handling is appropriate
-- [ ] Fix follows existing code patterns in the project
-- [ ] No unintended side effects in modified files
-
-### Report Format:
-For each repo, send to Leader:
-```
-## Fix Report — {repo_name}
-
-**Status**: completed | failed | blocked
-**Files Modified**: [list]
-**Files Added**: [list, e.g., test files]
-**Test Result**: pass/fail/N/A
-  - Command: {test command}
-  - Exit code: {number}
-  - Summary: {1-2 sentences}
-**Issues**: [blocker descriptions, or 'None']
-```
-"
-
-## 2. Cross-Repo Verification
-
-If the fix touches multiple repos:
-
-Leader delegates verification:
-
-"Verify the fix works across repos:
-1. Run all relevant test suites in each modified repo
-2. If there are integration points between modified repos, verify they still work together
-3. Check for any import/API contract changes that might break other repos"
-
-## 3. Diff Summary
-
-Leader collects diffs from all repos:
-
-```
-For each repo in repos_to_fix:
-  git -C {repo_path} diff --stat
-  git -C {repo_path} diff
-```
-
-Compile a unified diff summary showing all changes across repos.
-
-## 4. Spec Update (Optional)
-
-If an existing OpenSpec spec directory exists for this feature:
-
-```
-Check if {changes_path}/{spec_name}/proposal.md exists
-  where spec_name comes from:
-    - jira-flow state.json → openspec_name (if available)
-    - or search {changes_path}/ for a directory matching the parent issue context
-
-If exists → append to proposal.md:
-  ---
-  ## Bug Fix Record — {date}
-
-  **Bug**: {bug_description}
-  **Root Cause**: {step_results.1.root_cause}
-  **Fix Summary**: {what was changed, 2-3 sentences}
-  **Test Result**: {pass/fail summary}
-  **Files Changed**: {list}
-  ---
-
-If spec does not exist → skip, do NOT create a new spec.
-```
+若该 feature 有现有 spec 目录（`{root_path}/.dev-flow/{parent_key}/spec/` 或旧 `openspec/changes/`），追加一条 Bug 修复记录（bug / 根因 / 修复摘要 / 测试 / 改动文件）。无 spec 不新建。
 
 ## Gate 2
 
-**Semi-auto**: Present via AskUserQuestion:
-```
-## Fix Summary
-
-### Changes:
-{repo_1}: {N} files modified
-  - {file}: {1-line description of change}
-{repo_2}: {N} files modified
-  - {file}: {1-line description of change}
-
-### Test Results:
-{repo_1}: {N} tests passed, {N} failed
-{repo_2}: {N} tests passed, {N} failed
-
-### Spec Updated: yes/no
-
-Proceed to deploy?
-```
-
-User can: Confirm / Request changes / Abort
-
-**Full-auto**: Log the diff and test results, auto-proceed.
-
-Update state.json: `current_step = 2`, `step_results.2 = { files_changed, test_results, spec_updated, confirmed }`.
+Semi-auto：AskUserQuestion 展示改动 + 测试结果 + spec 是否更新 + "进入部署？"。用户：确认/要求改/中止。Full-auto：记录自动推进。
+更新 state：`current_step=2`，`step_results.2={files_changed, test_results, spec_updated, confirmed}`。

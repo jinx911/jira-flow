@@ -1,149 +1,57 @@
----
-partOf: bugfix-flow
-version: 1.0.0
-description: Step 1 instructions for bug analysis. Leader reads this file when entering Step 1.
----
+# Step 1：Bug 分析
 
-# Step 1: Bug Analysis
+> 目标：通过日志分析（测试环境）+ 代码定位找到根因，提修复方案。
 
-> **Objective**: Locate the root cause of the bug through log analysis (if test environment) and code exploration, then propose a fix approach.
+## 1. 日志分析（仅测试环境）
 
-## 1. Log Analysis (Test Environment Only)
+> 仅 `env_source == "test"` 执行；本地跳到 §2。
 
-> **Guard**: Only execute if `env_source` is "test". If "local", skip to section 2.
+测试环境 + Grafana MCP 可用时：
 
-If test environment and Grafana MCP is available:
+### 1a 关键词搜日志
+委托 code-explorer：用 `mcp__grafana__query_loki_logs`（datasourceUid 取 project-config `grafana` 或自动检测；logql 按服务标签 + 错误关键词；limit 20；direction backward）搜与 bug 相关错误日志（bug 描述 / 受影响服务 / 时间窗）。提取：错误信息 + 堆栈、request/trace id、时间频率、失败服务/模块。
 
-### 1a. Search Logs by Keywords
+### 1b 链路追踪（有 trace_id 时）
+`trace_id` 非空：`logql: {service=~".+"} |= "{trace_id}"`，跨服务追请求链，定位错误起源于哪个服务。
 
-Leader delegates to **code-explorer**:
-
-"Search Grafana Loki for error logs related to this bug.
-
-Bug description: {bug_description}
-Affected services: {list services from repos_to_fix}
-Time range: last 24 hours (or user-specified)
-
-Use mcp__grafana__query_loki_logs with:
-  - datasourceUid: from project-config → grafana.datasource_uid (if configured) or auto-detect
-  - logql: construct based on service labels and error keywords
-  - limit: 20
-  - direction: backward (newest first)
-
-Extract from logs:
-  - Error messages and stack traces
-  - Request IDs or trace IDs
-  - Timestamps and frequency patterns
-  - Which service/module is failing"
-
-### 1b. Trace Follow (if trace_id provided)
-
-If `trace_id` is non-empty:
-
-"Trace the request chain across services using the trace ID: {trace_id}
-
-Use mcp__grafana__query_loki_logs with:
-  - logql: {service=~\".+\"} |= \"{trace_id}\"
-  - Search across all services to find the full request chain
-
-Map the request flow:
-  Service A → Service B → Service C (where it failed)
-  Identify at which service the error originates"
-
-### 1c. Log Summary
-
-Present findings to Leader:
+### 1c 日志摘要
 ```
-## Grafana Log Analysis
+## Grafana 日志分析
+错误模式 / 频率（近 24h）/ 起源服务 / 受影响端点 / 堆栈要点 / 链路流（如有）
+```
+Grafana MCP 不可用 → 注明"跳过日志分析"，继续代码定位。
 
-Error pattern: <summary of error>
-Frequency: <how often in last 24h>
-Origin service: <which service>
-Affected endpoints: <API paths if identifiable>
-Stack trace highlights: <key error lines>
-Trace flow (if applicable): <service chain>
+## 2. 代码定位
+
+委托 code-explorer：
+
+**起点（按优先级）**：
+1. **dev-flow state.json**（若存在）：读 `{root_path}/.dev-flow/{parent_key}-state.json` → 取关键文件（原开发改动文件，bug 多在附近）
+2. **日志错误信息**（测试环境）：在代码搜错误字符串定位
+3. **bug 关键词**：搜 bug 描述里的模块/函数名
+
+**分析步骤**：探索相关代码 → 定位根因（逻辑错/空指针/查询错/竞态等）→ 评估影响范围（哪些文件要改、下游依赖）→ 查同类代码路径（潜在同源 bug）。
+
+**输出**：
+```
+## 根因分析
+根因：<1-3 句>
+受影响文件：{repo}/path:行 — <问题>
+影响范围：直接 / 副作用风险 / 同类路径
+复现：<如何触发>
 ```
 
-If Grafana MCP is unavailable → note "Grafana log analysis skipped (MCP unavailable)" and proceed to code exploration.
-
-## 2. Code Exploration
-
-Leader delegates to **code-explorer**:
-
-"Locate the root cause of this bug in the codebase.
-
-Bug description: {bug_description}
-Branches checked out: {repos_to_fix}
-
-### Starting Points (prioritized):
-
-1. **jira-flow state.json** (if exists):
-   Read {root_path}/.jira-flow/{parent_key}-state.json → get phase_decisions[1].key_files
-   These files were modified in the original development — the bug is likely in or near them.
-
-2. **Error messages from logs** (if test environment):
-   Search for error message strings in the codebase to find the exact source location.
-
-3. **Bug keywords**:
-   Search for relevant module/function names mentioned in the bug description.
-
-### Analysis Steps:
-
-1. Explore the relevant code areas
-2. Identify the root cause (logic error, missing null check, wrong query, race condition, etc.)
-3. Map the impact scope: which files need to change, are there downstream dependencies?
-4. Check if the bug exists in other similar code paths (potential siblings of the same bug)
-
-### Output Format:
+## 3. 修复方案
 
 ```
-## Root Cause Analysis
-
-**Root Cause**: <1-3 sentences explaining exactly what's wrong>
-
-**Affected Files**:
-  - {repo_path}/path/to/file.php:142 — <what's wrong here>
-  - {repo_path}/path/to/another-file.ts:58 — <what's wrong here>
-
-**Impact Scope**:
-  - Direct impact: <what functionality is broken>
-  - Side effects risk: <what else might be affected by the fix>
-  - Similar code paths: <any other places with the same pattern>
-
-**Reproduction**: <how this bug triggers — from logs or code analysis>
-```"
-
-## 3. Fix Proposal
-
-Based on the root cause analysis, propose a fix approach:
-
-```
-## Proposed Fix
-
-**Approach**: <describe the fix strategy in 3-5 sentences>
-
-**Changes per repo**:
-  {repo_path}:
-    - Modify {file}: {what to change}
-    - Add {test_file}: reproduction test
-
-  {repo_path}:
-    - Modify {file}: {what to change}
-
-**Estimated scope**: {N} files across {M} repos
-
-**Risk assessment**:
-  - Regression risk: <low/medium/high> — <why>
-  - Side effects: <what to watch for>
-  - Migration needed: <yes/no>
+## 修复方案
+思路：<3-5 句>
+各仓库改动：{repo}: 改 {file}:<改什么>；加 {test_file}: 复现测试
+预估范围：{N} 文件 / {M} 仓库
+风险评估：回归风险（低/中/高）/ 副作用 / 是否需 migration
 ```
 
 ## Gate 1
 
-**Semi-auto**: Present the full analysis + fix proposal via AskUserQuestion:
-- "Root cause: {summary}. Fix approach: {summary}. Files to change: {list}. Proceed with this approach?"
-- User can: Confirm / Adjust fix approach / Abort
-
-**Full-auto**: Log the analysis and auto-proceed.
-
-Update state.json: `current_step = 1`, `step_results.1 = { root_cause, fix_proposal, confirmed }`.
+Semi-auto：AskUserQuestion 展示根因 + 方案 + "按此方案修复？"。用户：确认/调整方案/中止。Full-auto：记录自动推进。
+更新 state：`current_step=1`，`step_results.1={root_cause, fix_proposal, confirmed}`。

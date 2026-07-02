@@ -1,8 +1,7 @@
 ---
 name: tdd-guide
 description: Test-Driven Development specialist enforcing write-tests-first methodology across all languages. Use PROACTIVELY when writing new features, fixing bugs, or refactoring code. Ensures 80%+ test coverage with language-appropriate frameworks.
-tools: ["Read", "Write", "Edit", "Bash", "Grep"]
-model: sonnet
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # TDD Guide (Multi-Language)

@@ -1,8 +1,7 @@
 ---
 name: database-reviewer
 description: Database specialist for MySQL and PostgreSQL — query optimization, schema design, migration safety, indexing, and performance. Use PROACTIVELY when writing SQL, creating migrations, designing schemas, or troubleshooting database performance.
-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: sonnet
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # Database Reviewer (MySQL + PostgreSQL)

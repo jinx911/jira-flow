@@ -1,8 +1,7 @@
 ---
 name: refactor-cleaner
 description: Dead code cleanup and consolidation specialist across all languages. Use PROACTIVELY for removing unused code, duplicates, and refactoring. Detects dead code using language-appropriate tools and safely removes it.
-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: sonnet
+tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # Refactor & Dead Code Cleaner (Multi-Language)

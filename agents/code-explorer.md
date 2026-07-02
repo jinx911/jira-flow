@@ -1,8 +1,7 @@
 ---
 name: code-explorer
 description: Codebase exploration specialist. Deeply analyzes code by tracing execution paths, mapping architecture layers, and documenting dependencies. Adapts strategy to language and framework. Use before starting new features or investigating bugs.
-model: sonnet
-tools: ["Read", "Grep", "Glob", "Bash"]
+tools: ["Read", "Grep", "Glob", "Bash", "SendMessage", "TaskGet", "TaskList", "TaskUpdate"]
 ---
 
 # Code Explorer Agent

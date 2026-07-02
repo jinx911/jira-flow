@@ -1,5 +1,5 @@
 #!/bin/bash
-# jira-flow installer — symlinks skills and agents into ~/.claude/
+# dev-flow installer — symlinks skills and agents into ~/.claude/
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -32,7 +32,7 @@ fi
 # Check superpowers plugin
 if [ ! -d "$SKILLS_DIR" ] || ! ls "$SKILLS_DIR"/superpowers* &>/dev/null 2>&1; then
     warn "superpowers plugin not detected in $SKILLS_DIR/"
-    warn "jira-flow requires superpowers >= 5.0.0. Install it before using jira-flow."
+    warn "dev-flow requires superpowers >= 5.0.0. Install it before using dev-flow."
 fi
 
 # --- Install Skills ---
@@ -88,7 +88,7 @@ info "Installed $AGENT_COUNT agents"
 
 echo ""
 echo "========================================="
-echo "  jira-flow installed successfully!"
+echo "  dev-flow installed successfully!"
 echo "========================================="
 echo ""
 echo "Skills:  $SKILL_COUNT linked to $SKILLS_DIR/"
@@ -97,6 +97,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Ensure superpowers plugin is installed (>= 5.0.0)"
 echo "  2. Ensure atlassian-rovo MCP is configured in Claude Code"
-echo "  3. Run: /init-jira-flow"
-echo "  4. Run: /jira-flow <ISSUE-KEY>"
+echo "  3. Run: /init-dev-flow"
+echo "  4. Run: /dev-flow <ISSUE-KEY>"
 echo ""

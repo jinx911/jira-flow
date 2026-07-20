@@ -99,12 +99,6 @@ prompt: "<角色 prompt>"
 
 **所有角色使用 subagent_type: "general-purpose"（全工具权限，可写代码）。**
 
-**Model 策略（重要，覆盖全局 agents.md 的 Model Selection 表）**：
-
-- spawn 时**一律不得传 `model` 参数**，让每个 worker 继承 Leader（主会话）当前使用的 model
-- **不按角色差异化分配 model**——无论 architect / developer / reviewer，全部与 Leader 保持一致
-- 理由：同团队统一 model 便于成本控制与行为一致性；如需切换 model，由用户在 Leader 层统一切换，成员自动跟随
-
 ## Step 5: 汇报
 
 向用户展示就位状态表格：角色 | name | 状态。

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Bugfix flow skill (`skills/bugfix-flow/`) — guided 3-step workflow for structured bug fixing with Sentry integration and Jira tracking
+- **Gate 1 关键决策对齐 mini-Gate**：Leader 在过 Gate 1 前从 design.md 抽 3-5 条关键设计决策（数据流/报错策略/架构约束/跨租户边界/不可逆改动）让用户 explicit confirm，防 Stage 2 按错误方案做完再推翻返工。
+- **Gate 2 测试证据强制**：Completion Report 的 Test Result 必须带"命令 + 原始计数 + 失败列表"三项，禁止仅口头 pass/N/A；防 agent 谎报测试结果。
 
 ### Changed
 

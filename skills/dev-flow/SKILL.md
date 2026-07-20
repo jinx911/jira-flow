@@ -18,8 +18,8 @@ description: 当用户提供 Jira issue key/URL（jira 模式）或自然语言�
 
 | 阶段 | 子 skill | 产出 | Gate |
 |---|---|---|---|
-| 1 需求 | `spec-author` | proposal.md + design.md（自适应工程章节） | Gate 1：完整性 checklist |
-| 2 开发 | `dev-loop` | tasks.md + 分支 + 实现代码 | Gate 2：任务完成 + 测试绿 |
+| 1 需求 | `spec-author` | proposal.md + design.md（自适应工程章节） | Gate 1：完整性 checklist + **关键决策对齐 mini-Gate** |
+| 2 开发 | `dev-loop` | tasks.md + 分支 + 实现代码 | Gate 2：任务完成 + 测试绿（**须原始证据**） |
 | 3 审查测试 | `review-test` | 审查 + 验证报告 | Gate 3：无 CRITICAL/HIGH + 测试通过 |
 | 4 收尾 | `ship` | 推送 + 部署 + Jira 收尾 | Gate 4：最终总结 |
 

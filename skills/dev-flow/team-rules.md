@@ -64,10 +64,11 @@ Leader 在写每阶段 prompt 文件前替换下列变量：
   **Status**: completed | failed | blocked
   **Summary**: ≤3 句
   **Files Changed**: [文件列表，最多 10]
-  **Test Result**: pass/fail/N/A + 关键指标
+  **Test Result**: 命令 + `Tests: X passed, Y failed, Z skipped` + 失败用例名（无失败写 None）
   **Issues**: [阻塞项，或 "None"]
   ```
   - 绝不在消息里贴代码片段、diff 或整文件内容——Leader 需要时自行 Read。
+  - **Test Result 必须带原始证据**（实际执行命令 + 原始计数 + 失败列表）。禁止仅写 `pass` / `N/A` / "全绿"——Gate 2 会退回。失败时 Y > 0 必须列出失败用例，若属无关既有失败须注明归属。
 - **进度更新（Progress Update）** —— 分级汇报：
   ```
   ## Progress Update

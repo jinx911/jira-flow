@@ -30,10 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `skills/jira-flow/phases/` (6 phase briefs + `jira-quality-rubric.md` + `quality-rubric.md`) — superseded by sub-skills + structural templates.
 
-### Fixed
-
-- `create-team` worker 模型现继承 Leader（主会话）当前 model：spawn 时不再传 `model` 参数，并显式覆盖全局 `agents.md` 的角色→model 映射，所有成员与 Leader 保持一致。
-
 ## [1.6.0] - 2026-06-04
 
 ### Added
